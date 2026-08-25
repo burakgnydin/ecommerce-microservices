@@ -5,4 +5,5 @@ public record ProductCreateDto(
     string? Description,
     decimal Price,
     int Stock,
-    Guid CategoryId);
+    Guid CategoryId,
+    bool AllowsPreOrder = false);

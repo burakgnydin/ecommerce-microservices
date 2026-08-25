@@ -8,4 +8,5 @@ public record ProductResponseDto(
     int Stock,
     Guid CategoryId,
     string? CategoryName,
+    bool AllowsPreOrder,
     DateTime CreatedAt);

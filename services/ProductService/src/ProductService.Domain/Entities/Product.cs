@@ -9,9 +9,10 @@ public class Product
     public int Stock { get; private set; }
     public Guid CategoryId { get; private set; }
     public Category? Category { get; private set; }
+    public bool AllowsPreOrder { get; private set; }
     public DateTime CreatedAt { get; private set; }
 
-    public Product(string name, string? description, decimal price, int stock, Guid categoryId)
+    public Product(string name, string? description, decimal price, int stock, Guid categoryId, bool allowsPreOrder = false)
     {
         Validate(name, description, price, stock);
 
@@ -21,10 +22,11 @@ public class Product
         Price = price;
         Stock = stock;
         CategoryId = categoryId;
+        AllowsPreOrder = allowsPreOrder;
         CreatedAt = DateTime.UtcNow;
     }
 
-    public void UpdateDetails(string name, string? description, decimal price, int stock, Guid categoryId)
+    public void UpdateDetails(string name, string? description, decimal price, int stock, Guid categoryId, bool allowsPreOrder)
     {
         Validate(name, description, price, stock);
 
@@ -33,6 +35,7 @@ public class Product
         Price = price;
         Stock = stock;
         CategoryId = categoryId;
+        AllowsPreOrder = allowsPreOrder;
     }
 
     private static void Validate(string name, string? description, decimal price, int stock)

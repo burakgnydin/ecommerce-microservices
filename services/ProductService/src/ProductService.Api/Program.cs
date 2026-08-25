@@ -2,6 +2,7 @@ using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using ProductService.Api.ExceptionHandling;
 using ProductService.Application.Interfaces;
+using ProductService.Application.Strategies;
 using ProductService.Application.Validators;
 using ProductService.Infrastructure.Persistence;
 using ProductService.Infrastructure.Persistence.Repositories;
@@ -22,6 +23,9 @@ builder.Services.AddDbContext<ProductDbContext>(options =>
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 builder.Services.AddScoped<IProductService, AppProductService>();
+
+builder.Services.AddKeyedScoped<IStockValidationStrategy, StandardStockValidationStrategy>(StockValidationStrategyKeys.Standard);
+builder.Services.AddKeyedScoped<IStockValidationStrategy, PreOrderStockValidationStrategy>(StockValidationStrategyKeys.PreOrder);
 
 builder.Services.AddValidatorsFromAssemblyContaining<ProductCreateDtoValidator>();
 builder.Services.AddFluentValidationAutoValidation();

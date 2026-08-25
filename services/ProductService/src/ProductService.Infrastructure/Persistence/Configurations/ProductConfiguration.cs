@@ -27,6 +27,10 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.Property(p => p.Stock)
             .IsRequired();
 
+        builder.Property(p => p.AllowsPreOrder)
+            .IsRequired()
+            .HasDefaultValue(false);
+
         builder.Property(p => p.CreatedAt)
             .IsRequired();
 
