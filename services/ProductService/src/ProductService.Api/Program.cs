@@ -6,6 +6,7 @@ using ProductService.Application.Strategies;
 using ProductService.Application.Validators;
 using ProductService.Infrastructure.Persistence;
 using ProductService.Infrastructure.Persistence.Repositories;
+using Scalar.AspNetCore;
 using SharpGrip.FluentValidation.AutoValidation.Mvc.Extensions;
 using AppProductService = ProductService.Application.Services.ProductService;
 
@@ -32,6 +33,8 @@ builder.Services.AddFluentValidationAutoValidation();
 
 builder.Services.AddControllers();
 
+builder.Services.AddOpenApi();
+
 builder.Services.AddProblemDetails(options =>
 {
     options.CustomizeProblemDetails = context =>
@@ -47,6 +50,15 @@ var app = builder.Build();
 
 app.UseExceptionHandler();
 app.UseHttpsRedirection();
+
+// API documentation is only exposed in Development; leaving it public in
+// production would expose internal contract details, against our security baseline.
+if (app.Environment.IsDevelopment())
+{
+    app.MapOpenApi();
+    app.MapScalarApiReference();
+}
+
 app.MapControllers();
 
 app.Run();
