@@ -39,6 +39,7 @@ public class CategoriesController : ControllerBase
     [HttpPost]
     [ProducesResponseType<CategoryResponseDto>(StatusCodes.Status201Created)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
     public async Task<ActionResult<CategoryResponseDto>> Create(CategoryCreateDto dto, CancellationToken cancellationToken)
     {
         var result = await _categoryService.CreateAsync(dto, cancellationToken);

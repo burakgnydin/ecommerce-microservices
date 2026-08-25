@@ -40,6 +40,11 @@ public class CategoryRepository : ICategoryRepository
         return await _context.Categories.AnyAsync(c => c.Id == id, cancellationToken);
     }
 
+    public async Task<bool> ExistsByNameAsync(string name, CancellationToken cancellationToken = default)
+    {
+        return await _context.Categories.AnyAsync(c => c.Name == name, cancellationToken);
+    }
+
     public async Task CreateAsync(Category category, CancellationToken cancellationToken = default)
     {
         await _context.Categories.AddAsync(category, cancellationToken);

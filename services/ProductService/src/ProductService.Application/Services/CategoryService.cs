@@ -1,4 +1,5 @@
 using ProductService.Application.DTOs;
+using ProductService.Application.Exceptions;
 using ProductService.Application.Interfaces;
 using ProductService.Application.Mapping;
 
@@ -22,6 +23,9 @@ public class CategoryService : ICategoryService
 
     public async Task<CategoryResponseDto> CreateAsync(CategoryCreateDto dto, CancellationToken cancellationToken = default)
     {
+        if (await _categoryRepository.ExistsByNameAsync(dto.Name, cancellationToken))
+            throw new DuplicateCategoryException(dto.Name);
+
         var category = dto.ToEntity();
         await _categoryRepository.CreateAsync(category, cancellationToken);
 

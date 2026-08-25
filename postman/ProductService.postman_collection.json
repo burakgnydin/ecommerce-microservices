@@ -55,6 +55,44 @@
           "response": []
         },
         {
+          "name": "Create Duplicate Category (Expect 409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 409\", function () {",
+                  "    pm.response.to.have.status(409);",
+                  "});",
+                  "",
+                  "pm.test(\"Problem details mention duplicate category\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.title).to.eql(\"Duplicate category\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Electronics\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/categories",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "api", "categories" ]
+            },
+            "description": "Re-submits the same category name as 'Create Category' to verify the uniqueness rule. Expects 409 Conflict (DuplicateCategoryException) rather than 400. Run 'Create Category' first."
+          },
+          "response": []
+        },
+        {
           "name": "Get All Categories",
           "event": [
             {

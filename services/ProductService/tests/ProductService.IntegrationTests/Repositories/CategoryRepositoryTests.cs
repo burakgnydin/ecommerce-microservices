@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using ProductService.Domain.Entities;
 using ProductService.Infrastructure.Persistence.Repositories;
 using ProductService.IntegrationTests.Fixtures;
@@ -52,5 +53,33 @@ public class CategoryRepositoryTests
 
         Assert.True(await repository.ExistsAsync(category.Id));
         Assert.False(await repository.ExistsAsync(Guid.NewGuid()));
+    }
+
+    [Fact]
+    public async Task ExistsByNameAsync_ReturnsTrue_WhenNameExists_AndFalse_WhenItDoesNot()
+    {
+        var name = $"Category-{Guid.NewGuid()}";
+        await using var setupContext = _fixture.CreateDbContext();
+        setupContext.Categories.Add(new Category(name));
+        await setupContext.SaveChangesAsync();
+
+        await using var context = _fixture.CreateDbContext();
+        var repository = new CategoryRepository(context);
+
+        Assert.True(await repository.ExistsByNameAsync(name));
+        Assert.False(await repository.ExistsByNameAsync($"Category-{Guid.NewGuid()}"));
+    }
+
+    [Fact]
+    public async Task CreateAsync_ThrowsDbUpdateException_WhenNameAlreadyExists()
+    {
+        var name = $"Category-{Guid.NewGuid()}";
+        await using var setupContext = _fixture.CreateDbContext();
+        await new CategoryRepository(setupContext).CreateAsync(new Category(name));
+
+        await using var context = _fixture.CreateDbContext();
+        var repository = new CategoryRepository(context);
+
+        await Assert.ThrowsAsync<DbUpdateException>(() => repository.CreateAsync(new Category(name)));
     }
 }

@@ -24,6 +24,7 @@ public class GlobalExceptionHandler : IExceptionHandler
         {
             NotFoundException => (StatusCodes.Status404NotFound, "Resource not found", exception.Message),
             InvalidCategoryReferenceException => (StatusCodes.Status400BadRequest, "Invalid category reference", exception.Message),
+            DuplicateCategoryException => (StatusCodes.Status409Conflict, "Duplicate category", exception.Message),
             _ => (StatusCodes.Status500InternalServerError, "An unexpected error occurred", UnexpectedErrorDetail)
         };
 
