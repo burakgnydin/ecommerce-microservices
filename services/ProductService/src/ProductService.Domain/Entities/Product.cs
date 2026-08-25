@@ -13,6 +13,30 @@ public class Product
 
     public Product(string name, string? description, decimal price, int stock, Guid categoryId)
     {
+        Validate(name, description, price, stock);
+
+        Id = Guid.NewGuid();
+        Name = name;
+        Description = description;
+        Price = price;
+        Stock = stock;
+        CategoryId = categoryId;
+        CreatedAt = DateTime.UtcNow;
+    }
+
+    public void UpdateDetails(string name, string? description, decimal price, int stock, Guid categoryId)
+    {
+        Validate(name, description, price, stock);
+
+        Name = name;
+        Description = description;
+        Price = price;
+        Stock = stock;
+        CategoryId = categoryId;
+    }
+
+    private static void Validate(string name, string? description, decimal price, int stock)
+    {
         if (string.IsNullOrWhiteSpace(name))
             throw new ArgumentException("Product name is required.", nameof(name));
         if (name.Length > 200)
@@ -23,13 +47,5 @@ public class Product
             throw new ArgumentOutOfRangeException(nameof(price), price, "Product price cannot be negative.");
         if (stock < 0)
             throw new ArgumentOutOfRangeException(nameof(stock), stock, "Product stock cannot be negative.");
-
-        Id = Guid.NewGuid();
-        Name = name;
-        Description = description;
-        Price = price;
-        Stock = stock;
-        CategoryId = categoryId;
-        CreatedAt = DateTime.UtcNow;
     }
 }

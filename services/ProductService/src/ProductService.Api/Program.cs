@@ -1,7 +1,12 @@
+using FluentValidation;
 using Microsoft.EntityFrameworkCore;
+using ProductService.Api.ExceptionHandling;
 using ProductService.Application.Interfaces;
+using ProductService.Application.Validators;
 using ProductService.Infrastructure.Persistence;
 using ProductService.Infrastructure.Persistence.Repositories;
+using SharpGrip.FluentValidation.AutoValidation.Mvc.Extensions;
+using AppProductService = ProductService.Application.Services.ProductService;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,11 +21,22 @@ builder.Services.AddDbContext<ProductDbContext>(options =>
 
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
+builder.Services.AddScoped<IProductService, AppProductService>();
+
+builder.Services.AddValidatorsFromAssemblyContaining<ProductCreateDtoValidator>();
+builder.Services.AddFluentValidationAutoValidation();
+
+builder.Services.AddControllers();
+
+builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 
+app.UseExceptionHandler();
 app.UseHttpsRedirection();
+app.MapControllers();
 
 app.Run();
