@@ -9,4 +9,9 @@ public static class CategoryMapper
     {
         return new CategoryResponseDto(category.Id, category.Name);
     }
+
+    public static Category ToEntity(this CategoryCreateDto dto)
+    {
+        return new Category(dto.Name);
+    }
 }

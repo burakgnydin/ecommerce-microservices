@@ -9,6 +9,7 @@ using ProductService.Infrastructure.Persistence.Repositories;
 using Scalar.AspNetCore;
 using SharpGrip.FluentValidation.AutoValidation.Mvc.Extensions;
 using AppProductService = ProductService.Application.Services.ProductService;
+using AppCategoryService = ProductService.Application.Services.CategoryService;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,6 +25,7 @@ builder.Services.AddDbContext<ProductDbContext>(options =>
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 builder.Services.AddScoped<IProductService, AppProductService>();
+builder.Services.AddScoped<ICategoryService, AppCategoryService>();
 
 builder.Services.AddKeyedScoped<IStockValidationStrategy, StandardStockValidationStrategy>(StockValidationStrategyKeys.Standard);
 builder.Services.AddKeyedScoped<IStockValidationStrategy, PreOrderStockValidationStrategy>(StockValidationStrategyKeys.PreOrder);
