@@ -1,0 +1,313 @@
+{
+  "info": {
+    "_postman_id": "1e32f8da-9a6a-4bac-add6-838ed49c3ece",
+    "name": "ProductService",
+    "description": "Product-service API (Categories + Products). Select the 'ProductService Local' environment before running so {{baseUrl}} resolves. Run the 'Happy Path' folder top-to-bottom (or via Collection Runner) to exercise Create Category -> Create Product -> Get Product, with the created ids passed automatically between requests via collection variables.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "categoryId", "value": "", "type": "string" },
+    { "key": "productId", "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Categories",
+      "item": [
+        {
+          "name": "Create Category",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "const jsonData = pm.response.json();",
+                  "",
+                  "pm.test(\"Response has an id\", function () {",
+                  "    pm.expect(jsonData.id).to.be.a(\"string\");",
+                  "});",
+                  "",
+                  "pm.collectionVariables.set(\"categoryId\", jsonData.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Electronics\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/categories",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "api", "categories" ]
+            },
+            "description": "Creates a category and stores the returned id in the {{categoryId}} collection variable, so subsequent product requests can reference a valid CategoryId."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Duplicate Category (Expect 409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 409\", function () {",
+                  "    pm.response.to.have.status(409);",
+                  "});",
+                  "",
+                  "pm.test(\"Problem details mention duplicate category\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.title).to.eql(\"Duplicate category\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Electronics\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/categories",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "api", "categories" ]
+            },
+            "description": "Re-submits the same category name as 'Create Category' to verify the uniqueness rule. Expects 409 Conflict (DuplicateCategoryException) rather than 400. Run 'Create Category' first."
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Categories",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response is an array\", function () {",
+                  "    pm.expect(pm.response.json()).to.be.an(\"array\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/categories",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "api", "categories" ]
+            },
+            "description": "Returns all categories (no pagination)."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Products",
+      "item": [
+        {
+          "name": "Create Product",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "const jsonData = pm.response.json();",
+                  "",
+                  "pm.test(\"Response has an id\", function () {",
+                  "    pm.expect(jsonData.id).to.be.a(\"string\");",
+                  "});",
+                  "",
+                  "pm.test(\"Response has the correct categoryId\", function () {",
+                  "    pm.expect(jsonData.categoryId).to.eql(pm.collectionVariables.get(\"categoryId\"));",
+                  "});",
+                  "",
+                  "pm.collectionVariables.set(\"productId\", jsonData.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Wireless Mouse\",\n  \"description\": \"Ergonomic wireless mouse\",\n  \"price\": 19.99,\n  \"stock\": 50,\n  \"categoryId\": \"{{categoryId}}\",\n  \"allowsPreOrder\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/products",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "api", "products" ]
+            },
+            "description": "Creates a product using {{categoryId}} (set by 'Create Category'). Stores the returned id in {{productId}}. Run 'Create Category' first."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Product By Id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const jsonData = pm.response.json();",
+                  "",
+                  "pm.test(\"Returned product matches the created productId\", function () {",
+                  "    pm.expect(jsonData.id).to.eql(pm.collectionVariables.get(\"productId\"));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/products/{{productId}}",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "api", "products", "{{productId}}" ]
+            },
+            "description": "Retrieves the product created by 'Create Product', using the auto-populated {{productId}} collection variable."
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Products",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has items array\", function () {",
+                  "    pm.expect(pm.response.json().items).to.be.an(\"array\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/products?pageNumber=1&pageSize=20",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "api", "products" ],
+              "query": [
+                { "key": "pageNumber", "value": "1" },
+                { "key": "pageSize", "value": "20" }
+              ]
+            },
+            "description": "Returns a paged list of products."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Product",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Product was updated\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.name).to.eql(\"Wireless Mouse Pro\");",
+                  "    pm.expect(jsonData.allowsPreOrder).to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Wireless Mouse Pro\",\n  \"description\": \"Updated ergonomic wireless mouse\",\n  \"price\": 24.99,\n  \"stock\": 40,\n  \"categoryId\": \"{{categoryId}}\",\n  \"allowsPreOrder\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/products/{{productId}}",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "api", "products", "{{productId}}" ]
+            },
+            "description": "Updates the product created by 'Create Product'."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Product",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 204\", function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/products/{{productId}}",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "api", "products", "{{productId}}" ]
+            },
+            "description": "Deletes the product created by 'Create Product'."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

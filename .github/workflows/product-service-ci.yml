@@ -1,0 +1,48 @@
+name: Product Service CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "services/ProductService/**"
+      - ".github/workflows/product-service-ci.yml"
+  pull_request:
+    paths:
+      - "services/ProductService/**"
+      - ".github/workflows/product-service-ci.yml"
+
+jobs:
+  build-and-test:
+    # Must run on a Linux runner: IntegrationTests uses Testcontainers, which starts a
+    # real PostgreSQL container for each test run. GitHub-hosted ubuntu-* runners come
+    # with Docker Engine pre-installed and running, so Testcontainers works out of the
+    # box with no extra setup. Windows/macOS runners do not offer this guarantee.
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: services/ProductService
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Restore dependencies
+        run: dotnet restore ProductService.slnx
+
+      - name: Build
+        run: dotnet build ProductService.slnx --no-restore
+
+      - name: Run tests (Unit + Integration)
+        # Runs both test projects via the solution file in one invocation.
+        # IntegrationTests pulls the postgres:16-alpine image and starts a container
+        # per test run via Testcontainers; no manual Docker Compose step is needed.
+        run: dotnet test ProductService.slnx --no-build
+
+      - name: Scan for vulnerable packages
+        run: dotnet list ProductService.slnx package --vulnerable --include-transitive
