@@ -1,0 +1,32 @@
+services:
+  product-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: product_service_user
+      POSTGRES_PASSWORD: ${PRODUCT_DB_PASSWORD}
+      POSTGRES_DB: product_service_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - product-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U product_service_user -d product_service_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  product-service:
+    build:
+      context: ./services/ProductService
+      dockerfile: Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__ProductDb: Host=product-db;Port=5432;Database=product_service_db;Username=product_service_user;Password=${PRODUCT_DB_PASSWORD}
+    ports:
+      - "8080:8080"
+    depends_on:
+      product-db:
+        condition: service_healthy
+
+volumes:
+  product-db-data:
