@@ -24,3 +24,6 @@
 ## Proje Yönetimi
 - İş takibi Jira'da (KAN projesi, Epic: KAN-20)
 - Her yeni servis için önce mimari öneri hazırlanır, onay sonrası geliştirmeye geçilir
+
+## Şablon Takibi Kuralı
+Yeni bir servis, önceki bir servisin mimari şablonunu (Clean Architecture katmanları, secrets yönetimi, hata yönetimi, CI, Docker Compose vb.) temel alırken: mimari öneri/prompt'ta "tekrar anlatmana gerek yok, sadece farkları belirt" denmesi, sadece DOKÜMANTASYONA (açıklamaya) yöneliktir - UYGULAMAYA değil. Şablonun TÜM adımları (Docker Compose dahil) yine de fiilen uygulanmalı, sadece metinde tekrar anlatılmasına gerek yok. Bir adım "zaten bilinen bir şablon parçası" diye atlanmamalı.
