@@ -1,15 +1,10 @@
 using FluentValidation;
-using Microsoft.EntityFrameworkCore;
 using ProductService.Api.ExceptionHandling;
-using ProductService.Application.Interfaces;
-using ProductService.Application.Strategies;
+using ProductService.Application.DependencyInjection;
 using ProductService.Application.Validators;
-using ProductService.Infrastructure.Persistence;
-using ProductService.Infrastructure.Persistence.Repositories;
+using ProductService.Infrastructure.DependencyInjection;
 using Scalar.AspNetCore;
 using SharpGrip.FluentValidation.AutoValidation.Mvc.Extensions;
-using AppProductService = ProductService.Application.Services.ProductService;
-using AppCategoryService = ProductService.Application.Services.CategoryService;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,16 +14,8 @@ if (builder.Environment.IsDevelopment())
 }
 
 // Add services to the container.
-builder.Services.AddDbContext<ProductDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("ProductDb")));
-
-builder.Services.AddScoped<IProductRepository, ProductRepository>();
-builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
-builder.Services.AddScoped<IProductService, AppProductService>();
-builder.Services.AddScoped<ICategoryService, AppCategoryService>();
-
-builder.Services.AddKeyedScoped<IStockValidationStrategy, StandardStockValidationStrategy>(StockValidationStrategyKeys.Standard);
-builder.Services.AddKeyedScoped<IStockValidationStrategy, PreOrderStockValidationStrategy>(StockValidationStrategyKeys.PreOrder);
+builder.Services.AddInfrastructureServices(builder.Configuration);
+builder.Services.AddApplicationServices();
 
 builder.Services.AddValidatorsFromAssemblyContaining<ProductCreateDtoValidator>();
 builder.Services.AddFluentValidationAutoValidation();
