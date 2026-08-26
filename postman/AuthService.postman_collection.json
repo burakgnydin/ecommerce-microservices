@@ -1,0 +1,282 @@
+{
+  "info": {
+    "_postman_id": "6f2c9d4e-8b1a-4a7f-9e3d-2c7a5b9d1e6f",
+    "name": "AuthService",
+    "description": "Auth-service API (Register/Login/Refresh/Logout + /users/me). Select the 'AuthService Local' environment before running so {{baseUrl}} resolves. Run the requests top-to-bottom (or via Collection Runner) to exercise Register -> Login -> Get Current User -> Refresh -> Logout, with tokens passed automatically between requests via collection variables.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "userEmail", "value": "", "type": "string" },
+    { "key": "userPassword", "value": "SecureP@ss1", "type": "string" },
+    { "key": "accessToken", "value": "", "type": "string" },
+    { "key": "refreshToken", "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Register",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.collectionVariables.set(\"userEmail\", \"jane.\" + Date.now() + \"@example.com\");"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status code is 201\", function () {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "",
+              "const jsonData = pm.response.json();",
+              "",
+              "pm.test(\"Response has an id\", function () {",
+              "    pm.expect(jsonData.id).to.be.a(\"string\");",
+              "});",
+              "",
+              "pm.test(\"Response email matches the registered email\", function () {",
+              "    pm.expect(jsonData.email).to.eql(pm.collectionVariables.get(\"userEmail\"));",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Jane Doe\",\n  \"email\": \"{{userEmail}}\",\n  \"password\": \"{{userPassword}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/register",
+          "host": [ "{{baseUrl}}" ],
+          "path": [ "api", "auth", "register" ]
+        },
+        "description": "Registers a new user with a freshly generated unique email (set in the pre-request script), so the collection can be re-run without hitting a duplicate-email conflict."
+      },
+      "response": []
+    },
+    {
+      "name": "Login (Correct Password)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "const jsonData = pm.response.json();",
+              "",
+              "pm.test(\"Response has an accessToken and refreshToken\", function () {",
+              "    pm.expect(jsonData.accessToken).to.be.a(\"string\");",
+              "    pm.expect(jsonData.refreshToken).to.be.a(\"string\");",
+              "});",
+              "",
+              "pm.collectionVariables.set(\"accessToken\", jsonData.accessToken);",
+              "pm.collectionVariables.set(\"refreshToken\", jsonData.refreshToken);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{userEmail}}\",\n  \"password\": \"{{userPassword}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/login",
+          "host": [ "{{baseUrl}}" ],
+          "path": [ "api", "auth", "login" ]
+        },
+        "description": "Logs in with the user created by 'Register' and stores the returned access/refresh tokens in collection variables. Run 'Register' first."
+      },
+      "response": []
+    },
+    {
+      "name": "Login (Wrong Password - Expect 401)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status code is 401\", function () {",
+              "    pm.response.to.have.status(401);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{userEmail}}\",\n  \"password\": \"WrongPassword1\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/login",
+          "host": [ "{{baseUrl}}" ],
+          "path": [ "api", "auth", "login" ]
+        },
+        "description": "Re-submits the same email as 'Register'/'Login' with an incorrect password. Expects 401 with a generic invalid-credentials message (no user-enumeration leak). Run 'Register' first."
+      },
+      "response": []
+    },
+    {
+      "name": "Get Current User (With Token)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Returned profile matches the logged-in user\", function () {",
+              "    const jsonData = pm.response.json();",
+              "    pm.expect(jsonData.email).to.eql(pm.collectionVariables.get(\"userEmail\"));",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/users/me",
+          "host": [ "{{baseUrl}}" ],
+          "path": [ "api", "users", "me" ]
+        },
+        "description": "Returns the profile of the user identified by the access token's 'sub' claim (BOLA-protected). Run 'Login (Correct Password)' first."
+      },
+      "response": []
+    },
+    {
+      "name": "Get Current User (No Token - Expect 401)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status code is 401\", function () {",
+              "    pm.response.to.have.status(401);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/users/me",
+          "host": [ "{{baseUrl}}" ],
+          "path": [ "api", "users", "me" ]
+        },
+        "description": "Calls /api/users/me without an Authorization header. Expects 401 Unauthorized."
+      },
+      "response": []
+    },
+    {
+      "name": "Refresh Token",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "const jsonData = pm.response.json();",
+              "",
+              "pm.test(\"Response has a rotated accessToken and refreshToken\", function () {",
+              "    pm.expect(jsonData.accessToken).to.be.a(\"string\");",
+              "    pm.expect(jsonData.refreshToken).to.be.a(\"string\");",
+              "    pm.expect(jsonData.refreshToken).to.not.eql(pm.collectionVariables.get(\"refreshToken\"));",
+              "});",
+              "",
+              "pm.collectionVariables.set(\"accessToken\", jsonData.accessToken);",
+              "pm.collectionVariables.set(\"refreshToken\", jsonData.refreshToken);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/refresh",
+          "host": [ "{{baseUrl}}" ],
+          "path": [ "api", "auth", "refresh" ]
+        },
+        "description": "Rotates the refresh token stored by 'Login (Correct Password)', issuing a new access/refresh token pair. Run 'Login (Correct Password)' first."
+      },
+      "response": []
+    },
+    {
+      "name": "Logout",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status code is 204\", function () {",
+              "    pm.response.to.have.status(204);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/logout",
+          "host": [ "{{baseUrl}}" ],
+          "path": [ "api", "auth", "logout" ]
+        },
+        "description": "Revokes the refresh token rotated by 'Refresh Token'. Run 'Refresh Token' first."
+      },
+      "response": []
+    }
+  ]
+}

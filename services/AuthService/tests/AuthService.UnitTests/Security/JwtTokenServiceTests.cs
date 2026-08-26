@@ -20,7 +20,8 @@ public class JwtTokenServiceTests
             AccessTokenExpirationMinutes = expirationMinutes
         };
 
-        return new JwtTokenService(Options.Create(options));
+        var signingCredentials = new SigningCredentials(new RsaSecurityKey(rsa), SecurityAlgorithms.RsaSha256);
+        return new JwtTokenService(Options.Create(options), signingCredentials);
     }
 
     [Fact]
@@ -119,7 +120,8 @@ public class JwtTokenServiceTests
             PrivateKeyPem = rsa.ExportRSAPrivateKeyPem(),
             RefreshTokenExpirationDays = 14
         };
-        var service = new JwtTokenService(Options.Create(options));
+        var signingCredentials = new SigningCredentials(new RsaSecurityKey(rsa), SecurityAlgorithms.RsaSha256);
+        var service = new JwtTokenService(Options.Create(options), signingCredentials);
 
         Assert.Equal(TimeSpan.FromDays(14), service.RefreshTokenLifetime);
     }

@@ -12,19 +12,16 @@ namespace AuthService.Infrastructure.Security;
 public class JwtTokenService : ITokenService
 {
     private readonly JwtOptions _options;
+    private readonly SigningCredentials _signingCredentials;
 
-    public JwtTokenService(IOptions<JwtOptions> options)
+    public JwtTokenService(IOptions<JwtOptions> options, SigningCredentials signingCredentials)
     {
         _options = options.Value;
+        _signingCredentials = signingCredentials;
     }
 
     public string GenerateAccessToken(User user)
     {
-        using var rsa = RSA.Create();
-        rsa.ImportFromPem(_options.PrivateKeyPem);
-
-        var credentials = new SigningCredentials(new RsaSecurityKey(rsa), SecurityAlgorithms.RsaSha256);
-
         var claims = new[]
         {
             new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
@@ -38,7 +35,7 @@ public class JwtTokenService : ITokenService
             audience: _options.Audience,
             claims: claims,
             expires: DateTime.UtcNow.AddMinutes(_options.AccessTokenExpirationMinutes),
-            signingCredentials: credentials);
+            signingCredentials: _signingCredentials);
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }

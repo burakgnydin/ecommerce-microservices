@@ -33,6 +33,11 @@ builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
 var jwtSigningRsa = RSA.Create();
 jwtSigningRsa.ImportFromPem(jwtOptions.PrivateKeyPem);
 
+// Built once and reused for the app's lifetime: importing a fresh RSA per signing call let
+// Microsoft.IdentityModel.Tokens' internal signature-provider cache (keyed by key content, not
+// object identity) hand back a provider still bound to an earlier, already-disposed RSA instance.
+builder.Services.AddSingleton(new SigningCredentials(new RsaSecurityKey(jwtSigningRsa), SecurityAlgorithms.RsaSha256));
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
