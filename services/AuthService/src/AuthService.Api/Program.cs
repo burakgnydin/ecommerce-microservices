@@ -1,13 +1,17 @@
+using System.Security.Cryptography;
 using System.Threading.RateLimiting;
 using AuthService.Api.ExceptionHandling;
 using AuthService.Application.Interfaces;
+using AuthService.Application.Services;
 using AuthService.Application.Validators;
 using AuthService.Infrastructure.Persistence;
 using AuthService.Infrastructure.Persistence.Repositories;
 using AuthService.Infrastructure.Security;
 using FluentValidation;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 using SharpGrip.FluentValidation.AutoValidation.Mvc.Extensions;
 using AppAuthService = AuthService.Application.Services.AuthService;
@@ -23,13 +27,35 @@ if (builder.Environment.IsDevelopment())
 builder.Services.AddDbContext<AuthDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("AuthDb")));
 
+var jwtOptions = builder.Configuration.GetSection("Jwt").Get<JwtOptions>() ?? new JwtOptions();
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
+
+var jwtSigningRsa = RSA.Create();
+jwtSigningRsa.ImportFromPem(jwtOptions.PrivateKeyPem);
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.MapInboundClaims = false;
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidIssuer = jwtOptions.Issuer,
+            ValidAudience = jwtOptions.Audience,
+            IssuerSigningKey = new RsaSecurityKey(jwtSigningRsa),
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true
+        };
+    });
+builder.Services.AddAuthorization();
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 builder.Services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
 builder.Services.AddScoped<ITokenService, JwtTokenService>();
 builder.Services.AddScoped<IAuthService, AppAuthService>();
+builder.Services.AddScoped<IUserService, UserService>();
 
 builder.Services.AddValidatorsFromAssemblyContaining<RegisterRequestDtoValidator>();
 builder.Services.AddFluentValidationAutoValidation();
@@ -67,6 +93,8 @@ var app = builder.Build();
 app.UseExceptionHandler();
 app.UseHttpsRedirection();
 app.UseRateLimiter();
+app.UseAuthentication();
+app.UseAuthorization();
 
 // API documentation is only exposed in Development; leaving it public in
 // production would expose internal contract details, against our security baseline.
