@@ -88,4 +88,77 @@ public class AuthServiceTests
         await Assert.ThrowsAsync<InvalidCredentialsException>(() => _sut.LoginAsync(dto));
         _refreshTokenRepository.Verify(r => r.CreateAsync(It.IsAny<RefreshToken>(), It.IsAny<CancellationToken>()), Times.Never);
     }
+
+    [Fact]
+    public async Task RefreshAsync_RotatesToken_WhenTokenIsActive()
+    {
+        var user = new User("Jane Doe", "jane@example.com", "hashed-password");
+        var existingToken = new RefreshToken(user.Id, "old-token-hash", DateTime.UtcNow.AddDays(1));
+        var dto = new RefreshRequestDto("raw-refresh-token");
+        _tokenService.Setup(t => t.HashRefreshToken("raw-refresh-token")).Returns("old-token-hash");
+        _refreshTokenRepository.Setup(r => r.GetByTokenHashAsync("old-token-hash", It.IsAny<CancellationToken>())).ReturnsAsync(existingToken);
+        _userRepository.Setup(r => r.GetByIdAsync(user.Id, It.IsAny<CancellationToken>())).ReturnsAsync(user);
+        _tokenService.Setup(t => t.GenerateAccessToken(user)).Returns("new-access-token");
+        _tokenService.Setup(t => t.GenerateRefreshToken()).Returns("new-refresh-token");
+        _tokenService.Setup(t => t.HashRefreshToken("new-refresh-token")).Returns("new-token-hash");
+        _tokenService.Setup(t => t.AccessTokenLifetime).Returns(TimeSpan.FromMinutes(15));
+        _tokenService.Setup(t => t.RefreshTokenLifetime).Returns(TimeSpan.FromDays(7));
+
+        var result = await _sut.RefreshAsync(dto);
+
+        Assert.Equal("new-access-token", result.AccessToken);
+        Assert.Equal("new-refresh-token", result.RefreshToken);
+        _refreshTokenRepository.Verify(r => r.RevokeAsync(existingToken.Id, It.IsAny<CancellationToken>()), Times.Once);
+        _refreshTokenRepository.Verify(r => r.CreateAsync(It.Is<RefreshToken>(rt => rt.UserId == user.Id && rt.TokenHash == "new-token-hash"), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task RefreshAsync_Throws_WhenTokenNotFound()
+    {
+        var dto = new RefreshRequestDto("unknown-token");
+        _tokenService.Setup(t => t.HashRefreshToken("unknown-token")).Returns("unknown-hash");
+        _refreshTokenRepository.Setup(r => r.GetByTokenHashAsync("unknown-hash", It.IsAny<CancellationToken>())).ReturnsAsync((RefreshToken?)null);
+
+        await Assert.ThrowsAsync<InvalidRefreshTokenException>(() => _sut.RefreshAsync(dto));
+        _refreshTokenRepository.Verify(r => r.CreateAsync(It.IsAny<RefreshToken>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task RefreshAsync_Throws_WhenTokenIsRevoked()
+    {
+        var user = new User("Jane Doe", "jane@example.com", "hashed-password");
+        var existingToken = new RefreshToken(user.Id, "old-token-hash", DateTime.UtcNow.AddDays(1));
+        existingToken.Revoke();
+        var dto = new RefreshRequestDto("raw-refresh-token");
+        _tokenService.Setup(t => t.HashRefreshToken("raw-refresh-token")).Returns("old-token-hash");
+        _refreshTokenRepository.Setup(r => r.GetByTokenHashAsync("old-token-hash", It.IsAny<CancellationToken>())).ReturnsAsync(existingToken);
+
+        await Assert.ThrowsAsync<InvalidRefreshTokenException>(() => _sut.RefreshAsync(dto));
+        _refreshTokenRepository.Verify(r => r.CreateAsync(It.IsAny<RefreshToken>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task LogoutAsync_RevokesToken_WhenTokenIsActive()
+    {
+        var existingToken = new RefreshToken(Guid.NewGuid(), "token-hash", DateTime.UtcNow.AddDays(1));
+        var dto = new LogoutRequestDto("raw-refresh-token");
+        _tokenService.Setup(t => t.HashRefreshToken("raw-refresh-token")).Returns("token-hash");
+        _refreshTokenRepository.Setup(r => r.GetByTokenHashAsync("token-hash", It.IsAny<CancellationToken>())).ReturnsAsync(existingToken);
+
+        await _sut.LogoutAsync(dto);
+
+        _refreshTokenRepository.Verify(r => r.RevokeAsync(existingToken.Id, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task LogoutAsync_IsIdempotent_WhenTokenNotFound()
+    {
+        var dto = new LogoutRequestDto("unknown-token");
+        _tokenService.Setup(t => t.HashRefreshToken("unknown-token")).Returns("unknown-hash");
+        _refreshTokenRepository.Setup(r => r.GetByTokenHashAsync("unknown-hash", It.IsAny<CancellationToken>())).ReturnsAsync((RefreshToken?)null);
+
+        await _sut.LogoutAsync(dto);
+
+        _refreshTokenRepository.Verify(r => r.RevokeAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
 }

@@ -46,6 +46,37 @@ public class AuthService : IAuthService
 
         await _refreshTokenRepository.RevokeActiveByUserIdAsync(user.Id, cancellationToken);
 
+        return await IssueTokensAsync(user, cancellationToken);
+    }
+
+    public async Task<LoginResponseDto> RefreshAsync(RefreshRequestDto dto, CancellationToken cancellationToken = default)
+    {
+        var tokenHash = _tokenService.HashRefreshToken(dto.RefreshToken);
+        var existingToken = await _refreshTokenRepository.GetByTokenHashAsync(tokenHash, cancellationToken);
+        if (existingToken is null || !existingToken.IsActive)
+            throw new InvalidRefreshTokenException();
+
+        var user = await _userRepository.GetByIdAsync(existingToken.UserId, cancellationToken);
+        if (user is null)
+            throw new InvalidRefreshTokenException();
+
+        await _refreshTokenRepository.RevokeAsync(existingToken.Id, cancellationToken);
+
+        return await IssueTokensAsync(user, cancellationToken);
+    }
+
+    public async Task LogoutAsync(LogoutRequestDto dto, CancellationToken cancellationToken = default)
+    {
+        var tokenHash = _tokenService.HashRefreshToken(dto.RefreshToken);
+        var existingToken = await _refreshTokenRepository.GetByTokenHashAsync(tokenHash, cancellationToken);
+        if (existingToken is null || !existingToken.IsActive)
+            return;
+
+        await _refreshTokenRepository.RevokeAsync(existingToken.Id, cancellationToken);
+    }
+
+    private async Task<LoginResponseDto> IssueTokensAsync(User user, CancellationToken cancellationToken)
+    {
         var accessToken = _tokenService.GenerateAccessToken(user);
         var refreshToken = _tokenService.GenerateRefreshToken();
         var refreshTokenHash = _tokenService.HashRefreshToken(refreshToken);

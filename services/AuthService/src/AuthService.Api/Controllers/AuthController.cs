@@ -51,4 +51,33 @@ public class AuthController : ControllerBase
         var result = await _authService.LoginAsync(dto, cancellationToken);
         return Ok(result);
     }
+
+    /// <summary>
+    /// Rotates a refresh token, issuing a new access/refresh token pair.
+    /// </summary>
+    /// <param name="dto">The refresh token to rotate.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    [HttpPost("refresh")]
+    [ProducesResponseType<LoginResponseDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<LoginResponseDto>> Refresh(RefreshRequestDto dto, CancellationToken cancellationToken)
+    {
+        var result = await _authService.RefreshAsync(dto, cancellationToken);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Revokes a refresh token.
+    /// </summary>
+    /// <param name="dto">The refresh token to revoke.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    [HttpPost("logout")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> Logout(LogoutRequestDto dto, CancellationToken cancellationToken)
+    {
+        await _authService.LogoutAsync(dto, cancellationToken);
+        return NoContent();
+    }
 }
