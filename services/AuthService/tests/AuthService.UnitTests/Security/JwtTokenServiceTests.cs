@@ -98,4 +98,29 @@ public class JwtTokenServiceTests
 
         Assert.NotEqual(hash1, hash2);
     }
+
+    [Fact]
+    public void AccessTokenLifetime_MatchesConfiguredExpirationMinutes()
+    {
+        using var rsa = RSA.Create(2048);
+        var service = CreateService(rsa, expirationMinutes: 30);
+
+        Assert.Equal(TimeSpan.FromMinutes(30), service.AccessTokenLifetime);
+    }
+
+    [Fact]
+    public void RefreshTokenLifetime_MatchesConfiguredExpirationDays()
+    {
+        using var rsa = RSA.Create(2048);
+        var options = new JwtOptions
+        {
+            Issuer = "auth-service",
+            Audience = "ecommerce-clients",
+            PrivateKeyPem = rsa.ExportRSAPrivateKeyPem(),
+            RefreshTokenExpirationDays = 14
+        };
+        var service = new JwtTokenService(Options.Create(options));
+
+        Assert.Equal(TimeSpan.FromDays(14), service.RefreshTokenLifetime);
+    }
 }

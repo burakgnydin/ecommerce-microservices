@@ -22,6 +22,7 @@ public class GlobalExceptionHandler : IExceptionHandler
         var (statusCode, title, detail) = exception switch
         {
             DuplicateEmailException => (StatusCodes.Status409Conflict, "Duplicate email", exception.Message),
+            InvalidCredentialsException => (StatusCodes.Status401Unauthorized, "Invalid credentials", exception.Message),
             _ => (StatusCodes.Status500InternalServerError, "An unexpected error occurred", UnexpectedErrorDetail)
         };
 

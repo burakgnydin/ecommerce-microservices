@@ -1,6 +1,7 @@
 using AuthService.Application.DTOs;
 using AuthService.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace AuthService.Api.Controllers;
 
@@ -32,5 +33,22 @@ public class AuthController : ControllerBase
     {
         var result = await _authService.RegisterAsync(dto, cancellationToken);
         return CreatedAtAction(nameof(Register), new { }, result);
+    }
+
+    /// <summary>
+    /// Authenticates a user and issues an access/refresh token pair.
+    /// </summary>
+    /// <param name="dto">Login credentials.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    [HttpPost("login")]
+    [EnableRateLimiting("login")]
+    [ProducesResponseType<LoginResponseDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
+    public async Task<ActionResult<LoginResponseDto>> Login(LoginRequestDto dto, CancellationToken cancellationToken)
+    {
+        var result = await _authService.LoginAsync(dto, cancellationToken);
+        return Ok(result);
     }
 }

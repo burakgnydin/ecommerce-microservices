@@ -54,4 +54,8 @@ public class JwtTokenService : ITokenService
         var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(refreshToken));
         return Convert.ToHexString(bytes);
     }
+
+    public TimeSpan AccessTokenLifetime => TimeSpan.FromMinutes(_options.AccessTokenExpirationMinutes);
+
+    public TimeSpan RefreshTokenLifetime => TimeSpan.FromDays(_options.RefreshTokenExpirationDays);
 }

@@ -7,4 +7,6 @@ public interface ITokenService
     string GenerateAccessToken(User user);
     string GenerateRefreshToken();
     string HashRefreshToken(string refreshToken);
+    TimeSpan AccessTokenLifetime { get; }
+    TimeSpan RefreshTokenLifetime { get; }
 }

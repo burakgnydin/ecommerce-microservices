@@ -9,12 +9,20 @@ namespace AuthService.Application.Services;
 public class AuthService : IAuthService
 {
     private readonly IUserRepository _userRepository;
+    private readonly IRefreshTokenRepository _refreshTokenRepository;
     private readonly IPasswordHasher _passwordHasher;
+    private readonly ITokenService _tokenService;
 
-    public AuthService(IUserRepository userRepository, IPasswordHasher passwordHasher)
+    public AuthService(
+        IUserRepository userRepository,
+        IRefreshTokenRepository refreshTokenRepository,
+        IPasswordHasher passwordHasher,
+        ITokenService tokenService)
     {
         _userRepository = userRepository;
+        _refreshTokenRepository = refreshTokenRepository;
         _passwordHasher = passwordHasher;
+        _tokenService = tokenService;
     }
 
     public async Task<UserResponseDto> RegisterAsync(RegisterRequestDto dto, CancellationToken cancellationToken = default)
@@ -28,5 +36,24 @@ public class AuthService : IAuthService
         await _userRepository.CreateAsync(user, cancellationToken);
 
         return user.ToDto();
+    }
+
+    public async Task<LoginResponseDto> LoginAsync(LoginRequestDto dto, CancellationToken cancellationToken = default)
+    {
+        var user = await _userRepository.GetByEmailAsync(dto.Email, cancellationToken);
+        if (user is null || !_passwordHasher.Verify(dto.Password, user.PasswordHash))
+            throw new InvalidCredentialsException();
+
+        await _refreshTokenRepository.RevokeActiveByUserIdAsync(user.Id, cancellationToken);
+
+        var accessToken = _tokenService.GenerateAccessToken(user);
+        var refreshToken = _tokenService.GenerateRefreshToken();
+        var refreshTokenHash = _tokenService.HashRefreshToken(refreshToken);
+        var refreshTokenLifetime = _tokenService.RefreshTokenLifetime;
+
+        var refreshTokenEntity = new RefreshToken(user.Id, refreshTokenHash, DateTime.UtcNow.Add(refreshTokenLifetime));
+        await _refreshTokenRepository.CreateAsync(refreshTokenEntity, cancellationToken);
+
+        return new LoginResponseDto(accessToken, refreshToken, (int)_tokenService.AccessTokenLifetime.TotalSeconds);
     }
 }
