@@ -1,4 +1,4 @@
-namespace OrderService.Api.Security;
+namespace OrderService.Infrastructure.Security;
 
 public class JwtOptions
 {

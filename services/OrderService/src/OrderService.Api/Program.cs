@@ -1,9 +1,5 @@
-using System.Security.Cryptography;
 using FluentValidation;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
 using OrderService.Api.ExceptionHandling;
-using OrderService.Api.Security;
 using OrderService.Application.DependencyInjection;
 using OrderService.Application.Validators;
 using OrderService.Infrastructure.DependencyInjection;
@@ -23,27 +19,6 @@ builder.Services.AddApplicationServices();
 
 builder.Services.AddValidatorsFromAssemblyContaining<OrderCreateDtoValidator>();
 builder.Services.AddFluentValidationAutoValidation();
-
-var jwtOptions = builder.Configuration.GetSection("Jwt").Get<JwtOptions>() ?? new JwtOptions();
-var jwtVerificationRsa = RSA.Create();
-jwtVerificationRsa.ImportFromPem(jwtOptions.PublicKeyPem);
-
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        options.MapInboundClaims = false;
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidIssuer = jwtOptions.Issuer,
-            ValidAudience = jwtOptions.Audience,
-            IssuerSigningKey = new RsaSecurityKey(jwtVerificationRsa),
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true
-        };
-    });
-builder.Services.AddAuthorization();
 
 builder.Services.AddControllers();
 
