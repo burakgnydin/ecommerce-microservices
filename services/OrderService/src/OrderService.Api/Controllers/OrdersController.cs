@@ -63,8 +63,8 @@ public class OrdersController : ControllerBase
     }
 
     /// <summary>
-    /// Updates the status of an order owned by the authenticated user. In v1, only
-    /// cancellation is supported.
+    /// Updates the status of an order owned by the authenticated user. Supports transitioning
+    /// to "Cancelled" or "Paid".
     /// </summary>
     /// <param name="id">Order id.</param>
     /// <param name="dto">Requested status.</param>
@@ -75,7 +75,13 @@ public class OrdersController : ControllerBase
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<OrderResponseDto>> UpdateStatus(Guid id, OrderStatusUpdateDto dto, CancellationToken cancellationToken)
     {
-        var result = await _orderService.CancelAsync(id, GetUserId(), cancellationToken);
+        var result = dto.Status switch
+        {
+            "Cancelled" => await _orderService.CancelAsync(id, GetUserId(), cancellationToken),
+            "Paid" => await _orderService.MarkAsPaidAsync(id, GetUserId(), cancellationToken),
+            _ => throw new ArgumentOutOfRangeException(nameof(dto), dto.Status, "Unsupported order status.")
+        };
+
         return Ok(result);
     }
 

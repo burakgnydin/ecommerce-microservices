@@ -38,6 +38,14 @@ public class Order
         Status = OrderStatus.Cancelled;
     }
 
+    public void MarkAsPaid()
+    {
+        if (Status != OrderStatus.Pending)
+            throw new InvalidOperationException($"Order cannot be marked as paid while in '{Status}' status.");
+
+        Status = OrderStatus.Paid;
+    }
+
     private static void Validate(Guid userId, ICollection<OrderItem> items)
     {
         if (userId == Guid.Empty)

@@ -3,13 +3,12 @@ using OrderService.Application.DTOs;
 
 namespace OrderService.Application.Validators;
 
-// v1 only supports order cancellation; payment-driven transitions (e.g. "Paid")
-// are deferred to KAN-24 once payment-service integration lands.
 public class OrderStatusUpdateDtoValidator : AbstractValidator<OrderStatusUpdateDto>
 {
     public OrderStatusUpdateDtoValidator()
     {
         RuleFor(x => x.Status)
-            .Equal("Cancelled");
+            .Must(status => status is "Cancelled" or "Paid")
+            .WithMessage("Status must be 'Cancelled' or 'Paid'.");
     }
 }

@@ -134,4 +134,37 @@ public class OrderServiceTests
 
         await Assert.ThrowsAsync<InvalidOrderStatusException>(() => _sut.CancelAsync(order.Id, userId));
     }
+
+    [Fact]
+    public async Task MarkAsPaidAsync_MarksOrderAsPaid_WhenPendingAndOwnedByUser()
+    {
+        var userId = Guid.NewGuid();
+        var order = new Order(userId, [new OrderItem(Guid.NewGuid(), "Widget", 9.99m, 1)]);
+        _orderRepository.Setup(r => r.GetByIdAsync(order.Id, It.IsAny<CancellationToken>())).ReturnsAsync(order);
+
+        var result = await _sut.MarkAsPaidAsync(order.Id, userId);
+
+        Assert.Equal("Paid", result.Status);
+        _orderRepository.Verify(r => r.UpdateAsync(order, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task MarkAsPaidAsync_Throws_WhenOrderIsNotOwnedByUser()
+    {
+        var order = new Order(Guid.NewGuid(), [new OrderItem(Guid.NewGuid(), "Widget", 9.99m, 1)]);
+        _orderRepository.Setup(r => r.GetByIdAsync(order.Id, It.IsAny<CancellationToken>())).ReturnsAsync(order);
+
+        await Assert.ThrowsAsync<NotFoundException>(() => _sut.MarkAsPaidAsync(order.Id, Guid.NewGuid()));
+    }
+
+    [Fact]
+    public async Task MarkAsPaidAsync_Throws_WhenOrderIsAlreadyPaid()
+    {
+        var userId = Guid.NewGuid();
+        var order = new Order(userId, [new OrderItem(Guid.NewGuid(), "Widget", 9.99m, 1)]);
+        order.MarkAsPaid();
+        _orderRepository.Setup(r => r.GetByIdAsync(order.Id, It.IsAny<CancellationToken>())).ReturnsAsync(order);
+
+        await Assert.ThrowsAsync<InvalidOrderStatusException>(() => _sut.MarkAsPaidAsync(order.Id, userId));
+    }
 }
