@@ -38,6 +38,7 @@ public class CartApiTests : IAsyncLifetime
     public async Task AddItemThenGet_ReturnsCartWithItem()
     {
         var productId = Guid.NewGuid();
+        _factory.ProductServiceHandler.SetProduct(productId, "Widget", 9.99m, 10);
         Authenticate(Guid.NewGuid());
 
         var addResponse = await _client.PostAsJsonAsync("/api/cart/items", new CartItemAddDto(productId, 3));
@@ -55,6 +56,7 @@ public class CartApiTests : IAsyncLifetime
     public async Task UpdateItemQuantity_UpdatesQuantity()
     {
         var productId = Guid.NewGuid();
+        _factory.ProductServiceHandler.SetProduct(productId, "Widget", 9.99m, 10);
         Authenticate(Guid.NewGuid());
         await _client.PostAsJsonAsync("/api/cart/items", new CartItemAddDto(productId, 1));
 
@@ -69,14 +71,28 @@ public class CartApiTests : IAsyncLifetime
     public async Task RemoveItem_RemovesItemFromCart()
     {
         var productId = Guid.NewGuid();
+        _factory.ProductServiceHandler.SetProduct(productId, "Widget", 9.99m, 10);
         Authenticate(Guid.NewGuid());
-        await _client.PostAsJsonAsync("/api/cart/items", new CartItemAddDto(productId, 1));
+        var addResponse = await _client.PostAsJsonAsync("/api/cart/items", new CartItemAddDto(productId, 1));
+        Assert.Equal(HttpStatusCode.OK, addResponse.StatusCode);
 
         var removeResponse = await _client.DeleteAsync($"/api/cart/items/{productId}");
 
         Assert.Equal(HttpStatusCode.OK, removeResponse.StatusCode);
         var cart = await removeResponse.Content.ReadFromJsonAsync<CartResponseDto>();
         Assert.Empty(cart!.Items);
+    }
+
+    [Fact]
+    public async Task AddItem_ReturnsConflict_WhenQuantityExceedsStock()
+    {
+        var productId = Guid.NewGuid();
+        _factory.ProductServiceHandler.SetProduct(productId, "Widget", 9.99m, 50);
+        Authenticate(Guid.NewGuid());
+
+        var addResponse = await _client.PostAsJsonAsync("/api/cart/items", new CartItemAddDto(productId, 60));
+
+        Assert.Equal(HttpStatusCode.Conflict, addResponse.StatusCode);
     }
 
     [Fact]

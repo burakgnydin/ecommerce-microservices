@@ -10,11 +10,13 @@ public class CartService : ICartService
 {
     private readonly ICartRepository _cartRepository;
     private readonly IOrderService _orderService;
+    private readonly IProductCatalogClient _productCatalogClient;
 
-    public CartService(ICartRepository cartRepository, IOrderService orderService)
+    public CartService(ICartRepository cartRepository, IOrderService orderService, IProductCatalogClient productCatalogClient)
     {
         _cartRepository = cartRepository;
         _orderService = orderService;
+        _productCatalogClient = productCatalogClient;
     }
 
     public async Task<CartResponseDto> GetOrCreateAsync(Guid userId, CancellationToken cancellationToken = default)
@@ -26,6 +28,11 @@ public class CartService : ICartService
     public async Task<CartResponseDto> AddItemAsync(Guid userId, CartItemAddDto dto, CancellationToken cancellationToken = default)
     {
         var cart = await GetOrCreateCartAsync(userId, cancellationToken);
+
+        var existingQuantity = cart.Items.FirstOrDefault(i => i.ProductId == dto.ProductId)?.Quantity ?? 0;
+        var requestedTotal = existingQuantity + dto.Quantity;
+        await EnsureStockAvailableAsync(dto.ProductId, requestedTotal, cancellationToken);
+
         cart.AddItem(dto.ProductId, dto.Quantity);
         await _cartRepository.UpdateAsync(cart, cancellationToken);
         return cart.ToDto();
@@ -34,6 +41,8 @@ public class CartService : ICartService
     public async Task<CartResponseDto> UpdateItemQuantityAsync(Guid userId, Guid productId, CartItemQuantityUpdateDto dto, CancellationToken cancellationToken = default)
     {
         var cart = await GetOwnedCartAsync(userId, cancellationToken);
+
+        await EnsureStockAvailableAsync(productId, dto.Quantity, cancellationToken);
 
         try
         {
@@ -46,6 +55,17 @@ public class CartService : ICartService
 
         await _cartRepository.UpdateAsync(cart, cancellationToken);
         return cart.ToDto();
+    }
+
+    private async Task EnsureStockAvailableAsync(Guid productId, int requestedQuantity, CancellationToken cancellationToken)
+    {
+        var product = await _productCatalogClient.GetProductAsync(productId, cancellationToken)
+            ?? throw new ProductNotFoundException(productId);
+
+        if (product.Stock < requestedQuantity)
+        {
+            throw new InsufficientStockException(productId, requestedQuantity, product.Stock);
+        }
     }
 
     public async Task<CartResponseDto> RemoveItemAsync(Guid userId, Guid productId, CancellationToken cancellationToken = default)

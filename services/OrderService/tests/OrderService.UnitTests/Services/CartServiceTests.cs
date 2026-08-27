@@ -11,11 +11,19 @@ public class CartServiceTests
 {
     private readonly Mock<ICartRepository> _cartRepository = new();
     private readonly Mock<IOrderService> _orderService = new();
+    private readonly Mock<IProductCatalogClient> _productCatalogClient = new();
     private readonly SutCartService _sut;
 
     public CartServiceTests()
     {
-        _sut = new SutCartService(_cartRepository.Object, _orderService.Object);
+        _sut = new SutCartService(_cartRepository.Object, _orderService.Object, _productCatalogClient.Object);
+    }
+
+    private void SetUpProduct(Guid productId, int stock)
+    {
+        _productCatalogClient
+            .Setup(c => c.GetProductAsync(productId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ProductCatalogItem(productId, "Test Product", 9.99m, stock));
     }
 
     [Fact]
@@ -50,6 +58,7 @@ public class CartServiceTests
         var productId = Guid.NewGuid();
         var cart = new Cart(userId);
         _cartRepository.Setup(r => r.GetByUserIdAsync(userId, It.IsAny<CancellationToken>())).ReturnsAsync(cart);
+        SetUpProduct(productId, stock: 10);
 
         var result = await _sut.AddItemAsync(userId, new CartItemAddDto(productId, 2));
 
@@ -67,11 +76,55 @@ public class CartServiceTests
         var cart = new Cart(userId);
         cart.AddItem(productId, 1);
         _cartRepository.Setup(r => r.GetByUserIdAsync(userId, It.IsAny<CancellationToken>())).ReturnsAsync(cart);
+        SetUpProduct(productId, stock: 10);
 
         var result = await _sut.AddItemAsync(userId, new CartItemAddDto(productId, 2));
 
         var item = Assert.Single(result.Items);
         Assert.Equal(3, item.Quantity);
+    }
+
+    [Fact]
+    public async Task AddItemAsync_Throws_WhenRequestedQuantityExceedsStock()
+    {
+        var userId = Guid.NewGuid();
+        var productId = Guid.NewGuid();
+        var cart = new Cart(userId);
+        _cartRepository.Setup(r => r.GetByUserIdAsync(userId, It.IsAny<CancellationToken>())).ReturnsAsync(cart);
+        SetUpProduct(productId, stock: 50);
+
+        await Assert.ThrowsAsync<InsufficientStockException>(
+            () => _sut.AddItemAsync(userId, new CartItemAddDto(productId, 60)));
+        _cartRepository.Verify(r => r.UpdateAsync(It.IsAny<Cart>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task AddItemAsync_Throws_WhenCumulativeQuantityExceedsStock()
+    {
+        var userId = Guid.NewGuid();
+        var productId = Guid.NewGuid();
+        var cart = new Cart(userId);
+        cart.AddItem(productId, 45);
+        _cartRepository.Setup(r => r.GetByUserIdAsync(userId, It.IsAny<CancellationToken>())).ReturnsAsync(cart);
+        SetUpProduct(productId, stock: 50);
+
+        await Assert.ThrowsAsync<InsufficientStockException>(
+            () => _sut.AddItemAsync(userId, new CartItemAddDto(productId, 10)));
+    }
+
+    [Fact]
+    public async Task AddItemAsync_Throws_WhenProductDoesNotExist()
+    {
+        var userId = Guid.NewGuid();
+        var productId = Guid.NewGuid();
+        var cart = new Cart(userId);
+        _cartRepository.Setup(r => r.GetByUserIdAsync(userId, It.IsAny<CancellationToken>())).ReturnsAsync(cart);
+        _productCatalogClient
+            .Setup(c => c.GetProductAsync(productId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((ProductCatalogItem?)null);
+
+        await Assert.ThrowsAsync<ProductNotFoundException>(
+            () => _sut.AddItemAsync(userId, new CartItemAddDto(productId, 1)));
     }
 
     [Fact]
@@ -82,10 +135,25 @@ public class CartServiceTests
         var cart = new Cart(userId);
         cart.AddItem(productId, 1);
         _cartRepository.Setup(r => r.GetByUserIdAsync(userId, It.IsAny<CancellationToken>())).ReturnsAsync(cart);
+        SetUpProduct(productId, stock: 10);
 
         var result = await _sut.UpdateItemQuantityAsync(userId, productId, new CartItemQuantityUpdateDto(5));
 
         Assert.Equal(5, result.Items.Single().Quantity);
+    }
+
+    [Fact]
+    public async Task UpdateItemQuantityAsync_Throws_WhenQuantityExceedsStock()
+    {
+        var userId = Guid.NewGuid();
+        var productId = Guid.NewGuid();
+        var cart = new Cart(userId);
+        cart.AddItem(productId, 1);
+        _cartRepository.Setup(r => r.GetByUserIdAsync(userId, It.IsAny<CancellationToken>())).ReturnsAsync(cart);
+        SetUpProduct(productId, stock: 4);
+
+        await Assert.ThrowsAsync<InsufficientStockException>(
+            () => _sut.UpdateItemQuantityAsync(userId, productId, new CartItemQuantityUpdateDto(5)));
     }
 
     [Fact]
@@ -102,11 +170,13 @@ public class CartServiceTests
     public async Task UpdateItemQuantityAsync_Throws_WhenItemNotInCart()
     {
         var userId = Guid.NewGuid();
+        var productId = Guid.NewGuid();
         var cart = new Cart(userId);
         _cartRepository.Setup(r => r.GetByUserIdAsync(userId, It.IsAny<CancellationToken>())).ReturnsAsync(cart);
+        SetUpProduct(productId, stock: 10);
 
         await Assert.ThrowsAsync<NotFoundException>(
-            () => _sut.UpdateItemQuantityAsync(userId, Guid.NewGuid(), new CartItemQuantityUpdateDto(1)));
+            () => _sut.UpdateItemQuantityAsync(userId, productId, new CartItemQuantityUpdateDto(1)));
     }
 
     [Fact]
