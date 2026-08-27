@@ -1,0 +1,630 @@
+{
+  "info": {
+    "_postman_id": "9d4b7a1c-3e5f-4c2a-8b6d-7f1e9c0a2d5b",
+    "name": "OrderService",
+    "description": "Order-service API (Orders + Cart). Select the 'OrderService Local' environment before running so {{baseUrl}}/{{authBaseUrl}}/{{productBaseUrl}} resolve. Run the folders top-to-bottom (or via Collection Runner): 'Setup' registers a user against auth-service and creates a product against product-service, 'Orders' exercises Create -> Get -> List -> Cancel, and 'Cart' exercises Add -> Get -> Update -> Remove -> Checkout, with ids/tokens passed automatically between requests via collection variables.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "userEmail", "value": "", "type": "string" },
+    { "key": "userPassword", "value": "SecureP@ss1", "type": "string" },
+    { "key": "accessToken", "value": "", "type": "string" },
+    { "key": "categoryId", "value": "", "type": "string" },
+    { "key": "productId", "value": "", "type": "string" },
+    { "key": "orderId", "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Setup",
+      "item": [
+        {
+          "name": "Register (AuthService)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"userEmail\", \"order.\" + Date.now() + \"@example.com\");"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Order Tester\",\n  \"email\": \"{{userEmail}}\",\n  \"password\": \"{{userPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{authBaseUrl}}/api/auth/register",
+              "host": [ "{{authBaseUrl}}" ],
+              "path": [ "api", "auth", "register" ]
+            },
+            "description": "Registers a new user in auth-service with a freshly generated unique email, so the collection can be re-run without hitting a duplicate-email conflict."
+          },
+          "response": []
+        },
+        {
+          "name": "Login (AuthService)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const jsonData = pm.response.json();",
+                  "",
+                  "pm.test(\"Response has an accessToken\", function () {",
+                  "    pm.expect(jsonData.accessToken).to.be.a(\"string\");",
+                  "});",
+                  "",
+                  "pm.collectionVariables.set(\"accessToken\", jsonData.accessToken);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{userEmail}}\",\n  \"password\": \"{{userPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{authBaseUrl}}/api/auth/login",
+              "host": [ "{{authBaseUrl}}" ],
+              "path": [ "api", "auth", "login" ]
+            },
+            "description": "Logs in with the user created by 'Register (AuthService)' and stores the returned access token, used as the Bearer token for every order-service request below. Run 'Register (AuthService)' first."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Category (ProductService)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "const jsonData = pm.response.json();",
+                  "",
+                  "pm.test(\"Response has an id\", function () {",
+                  "    pm.expect(jsonData.id).to.be.a(\"string\");",
+                  "});",
+                  "",
+                  "pm.collectionVariables.set(\"categoryId\", jsonData.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Order Test Category\"\n}"
+            },
+            "url": {
+              "raw": "{{productBaseUrl}}/api/categories",
+              "host": [ "{{productBaseUrl}}" ],
+              "path": [ "api", "categories" ]
+            },
+            "description": "Creates a category in product-service and stores the returned id, so 'Create Product' can reference a valid CategoryId."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Product (ProductService)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "const jsonData = pm.response.json();",
+                  "",
+                  "pm.test(\"Response has an id\", function () {",
+                  "    pm.expect(jsonData.id).to.be.a(\"string\");",
+                  "});",
+                  "",
+                  "pm.collectionVariables.set(\"productId\", jsonData.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Order Test Product\",\n  \"description\": \"Product used to exercise order-service requests\",\n  \"price\": 19.99,\n  \"stock\": 50,\n  \"categoryId\": \"{{categoryId}}\",\n  \"allowsPreOrder\": false\n}"
+            },
+            "url": {
+              "raw": "{{productBaseUrl}}/api/products",
+              "host": [ "{{productBaseUrl}}" ],
+              "path": [ "api", "products" ]
+            },
+            "description": "Creates a product in product-service using {{categoryId}} (set by 'Create Category (ProductService)'). Stores the returned id in {{productId}}, used by every order/cart request below. Run 'Create Category (ProductService)' first."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Orders",
+      "item": [
+        {
+          "name": "Create Order",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "const jsonData = pm.response.json();",
+                  "",
+                  "pm.test(\"Response has an id and Pending status\", function () {",
+                  "    pm.expect(jsonData.id).to.be.a(\"string\");",
+                  "    pm.expect(jsonData.status).to.eql(\"Pending\");",
+                  "});",
+                  "",
+                  "pm.collectionVariables.set(\"orderId\", jsonData.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    { \"productId\": \"{{productId}}\", \"quantity\": 2 }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/orders",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "api", "orders" ]
+            },
+            "description": "Creates an order for the product set up in 'Create Product (ProductService)'. Order-service calls product-service internally to validate the product and stock. Stores the returned id in {{orderId}}. Run the 'Setup' folder first."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Order (No Token - Expect 401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 401\", function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    { \"productId\": \"{{productId}}\", \"quantity\": 1 }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/orders",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "api", "orders" ]
+            },
+            "description": "Calls POST /api/orders without an Authorization header. Expects 401 Unauthorized."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Order By Id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Returned order matches the created orderId\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.id).to.eql(pm.collectionVariables.get(\"orderId\"));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/orders/{{orderId}}",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "api", "orders", "{{orderId}}" ]
+            },
+            "description": "Retrieves the order created by 'Create Order', using the auto-populated {{orderId}} collection variable. Run 'Create Order' first."
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Orders",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response is an array\", function () {",
+                  "    pm.expect(pm.response.json()).to.be.an(\"array\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/orders",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "api", "orders" ]
+            },
+            "description": "Returns all orders belonging to the authenticated user."
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel Order",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Order status is Cancelled\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.status).to.eql(\"Cancelled\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"Cancelled\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/orders/{{orderId}}",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "api", "orders", "{{orderId}}" ]
+            },
+            "description": "Cancels the order created by 'Create Order'. In v1 this is the only status transition PATCH /api/orders/{id} supports. Run 'Create Order' first."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Cart",
+      "item": [
+        {
+          "name": "Add Item To Cart",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Cart contains the added item\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    const item = jsonData.items.find(i => i.productId === pm.collectionVariables.get(\"productId\"));",
+                  "    pm.expect(item).to.not.be.undefined;",
+                  "    pm.expect(item.quantity).to.eql(1);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"{{productId}}\",\n  \"quantity\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/cart/items",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "api", "cart", "items" ]
+            },
+            "description": "Adds the product set up in 'Create Product (ProductService)' to the authenticated user's cart, creating the cart if it doesn't exist yet. Run the 'Setup' folder first."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Cart",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has an items array\", function () {",
+                  "    pm.expect(pm.response.json().items).to.be.an(\"array\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/cart",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "api", "cart" ]
+            },
+            "description": "Returns the authenticated user's cart, created/populated by 'Add Item To Cart'."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Item Quantity",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Item quantity was updated to 3\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    const item = jsonData.items.find(i => i.productId === pm.collectionVariables.get(\"productId\"));",
+                  "    pm.expect(item.quantity).to.eql(3);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quantity\": 3\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/cart/items/{{productId}}",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "api", "cart", "items", "{{productId}}" ]
+            },
+            "description": "Sets the quantity of the item added by 'Add Item To Cart'. Run 'Add Item To Cart' first."
+          },
+          "response": []
+        },
+        {
+          "name": "Remove Item From Cart",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Cart no longer contains the item\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    const item = jsonData.items.find(i => i.productId === pm.collectionVariables.get(\"productId\"));",
+                  "    pm.expect(item).to.be.undefined;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/cart/items/{{productId}}",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "api", "cart", "items", "{{productId}}" ]
+            },
+            "description": "Removes the item updated by 'Update Item Quantity' from the cart, leaving the cart empty. Run 'Update Item Quantity' first."
+          },
+          "response": []
+        },
+        {
+          "name": "Add Item To Cart (For Checkout)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"{{productId}}\",\n  \"quantity\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/cart/items",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "api", "cart", "items" ]
+            },
+            "description": "Re-adds an item to the now-empty cart so that 'Checkout' has something to convert into an order. Run 'Remove Item From Cart' first."
+          },
+          "response": []
+        },
+        {
+          "name": "Checkout",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "const jsonData = pm.response.json();",
+                  "",
+                  "pm.test(\"Response is a Pending order\", function () {",
+                  "    pm.expect(jsonData.id).to.be.a(\"string\");",
+                  "    pm.expect(jsonData.status).to.eql(\"Pending\");",
+                  "});",
+                  "",
+                  "pm.collectionVariables.set(\"orderId\", jsonData.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/cart/checkout",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "api", "cart", "checkout" ]
+            },
+            "description": "Converts the cart populated by 'Add Item To Cart (For Checkout)' into an order, then clears the cart. Overwrites {{orderId}} with the checkout order's id. Run 'Add Item To Cart (For Checkout)' first."
+          },
+          "response": []
+        },
+        {
+          "name": "Checkout Again (Empty Cart - Expect 400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/cart/checkout",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "api", "cart", "checkout" ]
+            },
+            "description": "Checks out again immediately after 'Checkout', which left the cart empty. Expects 400 Bad Request (EmptyCartException). Run 'Checkout' first."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

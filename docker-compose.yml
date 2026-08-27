@@ -58,6 +58,40 @@ services:
       auth-db:
         condition: service_healthy
 
+  order-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: order_service_user
+      POSTGRES_PASSWORD: ${ORDER_DB_PASSWORD}
+      POSTGRES_DB: order_service_db
+    ports:
+      - "5435:5432"
+    volumes:
+      - order-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U order_service_user -d order_service_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  order-service:
+    build:
+      context: ./services/OrderService
+      dockerfile: Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__OrderDb: Host=order-db;Port=5432;Database=order_service_db;Username=order_service_user;Password=${ORDER_DB_PASSWORD}
+      Jwt__PublicKeyPem: ${JWT_PUBLIC_KEY_PEM}
+      Services__ProductService__BaseUrl: http://product-service:8080
+    ports:
+      - "5102:8080"
+    depends_on:
+      order-db:
+        condition: service_healthy
+      product-service:
+        condition: service_started
+
 volumes:
   product-db-data:
   auth-db-data:
+  order-db-data:
