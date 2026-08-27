@@ -1,0 +1,491 @@
+{
+  "info": {
+    "_postman_id": "e5a9d3c7-2f6b-4e8a-9d1c-6b4f8a2e0d5c",
+    "name": "PaymentService",
+    "description": "Payment-service API (card-pattern payment simulation). Select the 'PaymentService Local' environment before running so {{baseUrl}}/{{authBaseUrl}}/{{orderBaseUrl}}/{{productBaseUrl}} resolve. Run the folders top-to-bottom (or via Collection Runner): 'Setup' registers a user against auth-service, creates a product against product-service and an order against order-service, and 'Payments' exercises Charge (approved) -> verify the order is Paid, plus the declined/not-found/not-payable/unauthenticated/invalid-input edge cases, with ids/tokens passed automatically between requests via collection variables.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "userEmail", "value": "", "type": "string" },
+    { "key": "userPassword", "value": "SecureP@ss1", "type": "string" },
+    { "key": "accessToken", "value": "", "type": "string" },
+    { "key": "categoryId", "value": "", "type": "string" },
+    { "key": "productId", "value": "", "type": "string" },
+    { "key": "orderId", "value": "", "type": "string" },
+    { "key": "unknownOrderId", "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Setup",
+      "item": [
+        {
+          "name": "Register (AuthService)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"userEmail\", \"payment.\" + Date.now() + \"@example.com\");"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Payment Tester\",\n  \"email\": \"{{userEmail}}\",\n  \"password\": \"{{userPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{authBaseUrl}}/api/auth/register",
+              "host": [ "{{authBaseUrl}}" ],
+              "path": [ "api", "auth", "register" ]
+            },
+            "description": "Registers a new user in auth-service with a freshly generated unique email, so the collection can be re-run without hitting a duplicate-email conflict."
+          },
+          "response": []
+        },
+        {
+          "name": "Login (AuthService)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const jsonData = pm.response.json();",
+                  "",
+                  "pm.test(\"Response has an accessToken\", function () {",
+                  "    pm.expect(jsonData.accessToken).to.be.a(\"string\");",
+                  "});",
+                  "",
+                  "pm.collectionVariables.set(\"accessToken\", jsonData.accessToken);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{userEmail}}\",\n  \"password\": \"{{userPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{authBaseUrl}}/api/auth/login",
+              "host": [ "{{authBaseUrl}}" ],
+              "path": [ "api", "auth", "login" ]
+            },
+            "description": "Logs in with the user created by 'Register (AuthService)' and stores the returned access token, used as the Bearer token for every payment-service/order-service request below. Run 'Register (AuthService)' first."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Category (ProductService)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "const jsonData = pm.response.json();",
+                  "",
+                  "pm.test(\"Response has an id\", function () {",
+                  "    pm.expect(jsonData.id).to.be.a(\"string\");",
+                  "});",
+                  "",
+                  "pm.collectionVariables.set(\"categoryId\", jsonData.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Payment Test Category\"\n}"
+            },
+            "url": {
+              "raw": "{{productBaseUrl}}/api/categories",
+              "host": [ "{{productBaseUrl}}" ],
+              "path": [ "api", "categories" ]
+            },
+            "description": "Creates a category in product-service and stores the returned id, so 'Create Product' can reference a valid CategoryId."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Product (ProductService)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "const jsonData = pm.response.json();",
+                  "",
+                  "pm.test(\"Response has an id\", function () {",
+                  "    pm.expect(jsonData.id).to.be.a(\"string\");",
+                  "});",
+                  "",
+                  "pm.collectionVariables.set(\"productId\", jsonData.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Payment Test Product\",\n  \"description\": \"Product used to exercise payment-service requests\",\n  \"price\": 19.99,\n  \"stock\": 50,\n  \"categoryId\": \"{{categoryId}}\",\n  \"allowsPreOrder\": false\n}"
+            },
+            "url": {
+              "raw": "{{productBaseUrl}}/api/products",
+              "host": [ "{{productBaseUrl}}" ],
+              "path": [ "api", "products" ]
+            },
+            "description": "Creates a product in product-service using {{categoryId}} (set by 'Create Category (ProductService)'). Stores the returned id in {{productId}}, used by 'Create Order'. Run 'Create Category (ProductService)' first."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Order (OrderService)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "const jsonData = pm.response.json();",
+                  "",
+                  "pm.test(\"Response has an id and Pending status\", function () {",
+                  "    pm.expect(jsonData.id).to.be.a(\"string\");",
+                  "    pm.expect(jsonData.status).to.eql(\"Pending\");",
+                  "});",
+                  "",
+                  "pm.collectionVariables.set(\"orderId\", jsonData.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    { \"productId\": \"{{productId}}\", \"quantity\": 2 }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{orderBaseUrl}}/api/orders",
+              "host": [ "{{orderBaseUrl}}" ],
+              "path": [ "api", "orders" ]
+            },
+            "description": "Creates a Pending order for the product set up above, to be charged by 'Charge Order (Approved Card)'. Stores the returned id in {{orderId}}. Run 'Create Product (ProductService)' first."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Payments",
+      "item": [
+        {
+          "name": "Charge Order (No Token - Expect 401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 401\", function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"{{orderId}}\",\n  \"cardNumber\": \"4111111111111234\",\n  \"expiryMonth\": 12,\n  \"expiryYear\": 2030,\n  \"cvv\": \"123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/payments",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "api", "payments" ]
+            },
+            "description": "Calls POST /api/payments without an Authorization header. Expects 401 Unauthorized."
+          },
+          "response": []
+        },
+        {
+          "name": "Charge Order (Invalid Card - Expect 400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"{{orderId}}\",\n  \"cardNumber\": \"123\",\n  \"expiryMonth\": 12,\n  \"expiryYear\": 2030,\n  \"cvv\": \"123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/payments",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "api", "payments" ]
+            },
+            "description": "Submits a card number that fails the 13-19 digit format rule. Expects 400 Bad Request from FluentValidation. Run the 'Setup' folder first."
+          },
+          "response": []
+        },
+        {
+          "name": "Charge Order (Not Found - Expect 404)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"unknownOrderId\", crypto.randomUUID ? crypto.randomUUID() : '00000000-0000-0000-0000-000000000000');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 404\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"{{unknownOrderId}}\",\n  \"cardNumber\": \"4111111111111234\",\n  \"expiryMonth\": 12,\n  \"expiryYear\": 2030,\n  \"cvv\": \"123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/payments",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "api", "payments" ]
+            },
+            "description": "References a random, non-existent orderId. Expects 404 Not Found. Run the 'Setup' folder first (for a valid access token)."
+          },
+          "response": []
+        },
+        {
+          "name": "Charge Order (Declined Card - Expect 402)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 402\", function () {",
+                  "    pm.response.to.have.status(402);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"{{orderId}}\",\n  \"cardNumber\": \"4111111111110000\",\n  \"expiryMonth\": 12,\n  \"expiryYear\": 2030,\n  \"cvv\": \"123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/payments",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "api", "payments" ]
+            },
+            "description": "Uses a card number ending in '0000', which the payment simulator always declines. Expects 402 Payment Required, and the order set up in 'Create Order (OrderService)' remains Pending. Run the 'Setup' folder first."
+          },
+          "response": []
+        },
+        {
+          "name": "Charge Order (Approved Card)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "const jsonData = pm.response.json();",
+                  "",
+                  "pm.test(\"Payment succeeded with a masked card number\", function () {",
+                  "    pm.expect(jsonData.status).to.eql(\"Succeeded\");",
+                  "    pm.expect(jsonData.maskedCardNumber).to.eql(\"**** **** **** 1234\");",
+                  "    pm.expect(jsonData.amount).to.eql(39.98);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"{{orderId}}\",\n  \"cardNumber\": \"4111111111111234\",\n  \"expiryMonth\": 12,\n  \"expiryYear\": 2030,\n  \"cvv\": \"123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/payments",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "api", "payments" ]
+            },
+            "description": "Charges the order created in 'Create Order (OrderService)' with a card that the simulator approves (any number not ending in '0000'). On success, payment-service also transitions the order to Paid via order-service. Run the 'Setup' folder first."
+          },
+          "response": []
+        },
+        {
+          "name": "Verify Order Is Paid (OrderService)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Order status is Paid\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.status).to.eql(\"Paid\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{orderBaseUrl}}/api/orders/{{orderId}}",
+              "host": [ "{{orderBaseUrl}}" ],
+              "path": [ "api", "orders", "{{orderId}}" ]
+            },
+            "description": "Confirms that 'Charge Order (Approved Card)' actually transitioned the order to Paid in order-service, proving the cross-service call worked end-to-end. Run 'Charge Order (Approved Card)' first."
+          },
+          "response": []
+        },
+        {
+          "name": "Charge Order (Already Paid - Expect 409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 409\", function () {",
+                  "    pm.response.to.have.status(409);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"{{orderId}}\",\n  \"cardNumber\": \"4111111111111234\",\n  \"expiryMonth\": 12,\n  \"expiryYear\": 2030,\n  \"cvv\": \"123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/payments",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "api", "payments" ]
+            },
+            "description": "Attempts to charge the same order again after 'Verify Order Is Paid (OrderService)' confirmed it is no longer Pending. Expects 409 Conflict. Run 'Verify Order Is Paid (OrderService)' first."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
