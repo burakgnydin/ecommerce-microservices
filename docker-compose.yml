@@ -124,6 +124,16 @@ services:
       order-service:
         condition: service_started
 
+  notification-service:
+    build:
+      context: ./services/NotificationService
+      dockerfile: Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      Jwt__PublicKeyPem: ${JWT_PUBLIC_KEY_PEM}
+    ports:
+      - "5104:8080"
+
 volumes:
   product-db-data:
   auth-db-data:
