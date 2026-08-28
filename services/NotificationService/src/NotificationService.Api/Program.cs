@@ -1,4 +1,5 @@
 using FluentValidation;
+using NotificationService.Api.ExceptionHandling;
 using NotificationService.Application.DependencyInjection;
 using NotificationService.Application.Validators;
 using NotificationService.Infrastructure.DependencyInjection;
@@ -23,10 +24,20 @@ builder.Services.AddControllers();
 
 builder.Services.AddOpenApi();
 
+builder.Services.AddProblemDetails(options =>
+{
+    options.CustomizeProblemDetails = context =>
+    {
+        context.ProblemDetails.Extensions["traceId"] = context.HttpContext.TraceIdentifier;
+    };
+});
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 
+app.UseExceptionHandler();
 app.UseHttpsRedirection();
 
 // API documentation is only exposed in Development; leaving it public in
