@@ -91,7 +91,41 @@ services:
       product-service:
         condition: service_started
 
+  payment-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: payment_service_user
+      POSTGRES_PASSWORD: ${PAYMENT_DB_PASSWORD}
+      POSTGRES_DB: payment_service_db
+    ports:
+      - "5436:5432"
+    volumes:
+      - payment-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U payment_service_user -d payment_service_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  payment-service:
+    build:
+      context: ./services/PaymentService
+      dockerfile: Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__PaymentDb: Host=payment-db;Port=5432;Database=payment_service_db;Username=payment_service_user;Password=${PAYMENT_DB_PASSWORD}
+      Jwt__PublicKeyPem: ${JWT_PUBLIC_KEY_PEM}
+      Services__OrderService__BaseUrl: http://order-service:8080
+    ports:
+      - "5103:8080"
+    depends_on:
+      payment-db:
+        condition: service_healthy
+      order-service:
+        condition: service_started
+
 volumes:
   product-db-data:
   auth-db-data:
   order-db-data:
+  payment-db-data:

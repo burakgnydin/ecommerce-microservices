@@ -59,4 +59,23 @@ public class OrderTests
 
         Assert.Throws<InvalidOperationException>(() => order.Cancel());
     }
+
+    [Fact]
+    public void MarkAsPaid_SetsStatusToPaid_WhenOrderIsPending()
+    {
+        var order = new Order(Guid.NewGuid(), [CreateItem()]);
+
+        order.MarkAsPaid();
+
+        Assert.Equal(OrderStatus.Paid, order.Status);
+    }
+
+    [Fact]
+    public void MarkAsPaid_Throws_WhenOrderIsNotPending()
+    {
+        var order = new Order(Guid.NewGuid(), [CreateItem()]);
+        order.MarkAsPaid();
+
+        Assert.Throws<InvalidOperationException>(() => order.MarkAsPaid());
+    }
 }

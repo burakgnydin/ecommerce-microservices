@@ -69,6 +69,23 @@ public class OrderService : IOrderService
         return order.ToDto();
     }
 
+    public async Task<OrderResponseDto> MarkAsPaidAsync(Guid orderId, Guid userId, CancellationToken cancellationToken = default)
+    {
+        var order = await GetOwnedOrderAsync(orderId, userId, cancellationToken);
+
+        try
+        {
+            order.MarkAsPaid();
+        }
+        catch (InvalidOperationException ex)
+        {
+            throw new InvalidOrderStatusException(ex.Message);
+        }
+
+        await _orderRepository.UpdateAsync(order, cancellationToken);
+        return order.ToDto();
+    }
+
     // Not-found and not-owned both resolve to the same NotFoundException so a caller cannot
     // distinguish "doesn't exist" from "belongs to someone else" (avoids IDOR enumeration).
     private async Task<Order> GetOwnedOrderAsync(Guid orderId, Guid userId, CancellationToken cancellationToken)

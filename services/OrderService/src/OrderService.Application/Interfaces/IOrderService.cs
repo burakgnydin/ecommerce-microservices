@@ -11,4 +11,6 @@ public interface IOrderService
     Task<IReadOnlyList<OrderResponseDto>> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default);
 
     Task<OrderResponseDto> CancelAsync(Guid orderId, Guid userId, CancellationToken cancellationToken = default);
+
+    Task<OrderResponseDto> MarkAsPaidAsync(Guid orderId, Guid userId, CancellationToken cancellationToken = default);
 }
