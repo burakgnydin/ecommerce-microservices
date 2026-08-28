@@ -1,0 +1,44 @@
+name: Notification Service CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "services/NotificationService/**"
+      - ".github/workflows/notification-service-ci.yml"
+  pull_request:
+    paths:
+      - "services/NotificationService/**"
+      - ".github/workflows/notification-service-ci.yml"
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: services/NotificationService
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Restore dependencies
+        run: dotnet restore NotificationService.slnx
+
+      - name: Build
+        run: dotnet build NotificationService.slnx --no-restore
+
+      - name: Run tests (Unit + Integration)
+        # No database is involved (notification-service is stateless), and JWT validation uses a
+        # test-only RSA key pair minted in-process by NotificationServiceApiFactory, so no
+        # Testcontainers setup or CI secret is required.
+        run: dotnet test NotificationService.slnx --no-build
+
+      - name: Scan for vulnerable packages
+        run: dotnet list NotificationService.slnx package --vulnerable --include-transitive
