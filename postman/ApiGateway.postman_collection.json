@@ -1,0 +1,228 @@
+{
+  "info": {
+    "_postman_id": "7c37b9b4-d362-461a-ac67-781d489d982c",
+    "name": "ApiGateway",
+    "description": "api-gateway routing (YARP). Select the 'ApiGateway Local' environment before running so {{baseUrl}} resolves to the gateway. Run the folders top-to-bottom: 'Setup' registers and logs in a user through the gateway's /auth route, 'Products' exercises the unauthenticated /products route, 'Orders' exercises the authenticated /orders route (both with and without a token), and 'Routing' checks an unmatched path returns 404. Requires auth-service, product-service and order-service to be reachable behind the gateway (docker-compose or local dotnet run).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "userEmail", "value": "", "type": "string" },
+    { "key": "userPassword", "value": "SecureP@ss1", "type": "string" },
+    { "key": "accessToken", "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Setup",
+      "item": [
+        {
+          "name": "Register (via /auth)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"userEmail\", \"gateway.\" + Date.now() + \"@example.com\");"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Gateway Tester\",\n  \"email\": \"{{userEmail}}\",\n  \"password\": \"{{userPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/api/auth/register",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "auth", "api", "auth", "register" ]
+            },
+            "description": "Registers a new user by calling auth-service through the gateway's /auth prefix. Verifies the gateway strips /auth and forwards to auth-service's /api/auth/register."
+          },
+          "response": []
+        },
+        {
+          "name": "Login (via /auth)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const jsonData = pm.response.json();",
+                  "",
+                  "pm.test(\"Response has an accessToken\", function () {",
+                  "    pm.expect(jsonData.accessToken).to.be.a(\"string\");",
+                  "});",
+                  "",
+                  "pm.collectionVariables.set(\"accessToken\", jsonData.accessToken);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{userEmail}}\",\n  \"password\": \"{{userPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/api/auth/login",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "auth", "api", "auth", "login" ]
+            },
+            "description": "Logs in via the gateway and stores the returned access token, used as the Bearer token for the 'Orders' requests below. Run 'Register (via /auth)' first."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Products",
+      "item": [
+        {
+          "name": "List Products (via /products, no token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/api/products",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "products", "api", "products" ]
+            },
+            "description": "Calls product-service through the gateway's /products prefix. This endpoint requires no auth, so it also verifies routing in isolation from the auth flow."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Orders",
+      "item": [
+        {
+          "name": "List Orders (No Token - Expect 401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 401\", function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/orders/api/orders",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "orders", "api", "orders" ]
+            },
+            "description": "Calls order-service through the gateway's /orders prefix without a token. Expects 401 Unauthorized (proves the request reached order-service rather than being swallowed by the gateway)."
+          },
+          "response": []
+        },
+        {
+          "name": "List Orders (With Token - Expect 200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/orders/api/orders",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "orders", "api", "orders" ]
+            },
+            "description": "Calls order-service through the gateway's /orders prefix with the token from 'Login (via /auth)'. Expects 200 OK with the authenticated user's orders. Run the 'Setup' folder first."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Routing",
+      "item": [
+        {
+          "name": "Unmatched Route (Expect 404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 404\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/unknown",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "unknown" ]
+            },
+            "description": "Calls a path with no configured route. Expects 404 Not Found from the gateway itself (no cluster matched)."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
