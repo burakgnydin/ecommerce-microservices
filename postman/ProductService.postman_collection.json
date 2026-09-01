@@ -2,14 +2,61 @@
   "info": {
     "_postman_id": "1e32f8da-9a6a-4bac-add6-838ed49c3ece",
     "name": "ProductService",
-    "description": "Product-service API (Categories + Products). Select the 'ProductService Local' environment before running so {{baseUrl}} resolves. Run the 'Happy Path' folder top-to-bottom (or via Collection Runner) to exercise Create Category -> Create Product -> Get Product, with the created ids passed automatically between requests via collection variables.",
+    "description": "Product-service API (Categories + Products). Select the 'ProductService Local' environment before running so {{baseUrl}}/{{authBaseUrl}} resolve, and set {{seedAdminEmail}}/{{seedAdminPassword}} to match your .env. Run 'Setup' first to obtain an Admin token, then the 'Categories'/'Products' folders top-to-bottom (or via Collection Runner) to exercise Create Category -> Create Product -> Get Product, with the created ids passed automatically between requests via collection variables.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
     { "key": "categoryId", "value": "", "type": "string" },
-    { "key": "productId", "value": "", "type": "string" }
+    { "key": "productId", "value": "", "type": "string" },
+    { "key": "adminAccessToken", "value": "", "type": "string" }
   ],
   "item": [
+    {
+      "name": "Setup",
+      "item": [
+        {
+          "name": "Login as Seed Admin (AuthService)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const jsonData = pm.response.json();",
+                  "",
+                  "pm.test(\"Response has an accessToken\", function () {",
+                  "    pm.expect(jsonData.accessToken).to.be.a(\"string\");",
+                  "});",
+                  "",
+                  "pm.collectionVariables.set(\"adminAccessToken\", jsonData.accessToken);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{seedAdminEmail}}\",\n  \"password\": \"{{seedAdminPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{authBaseUrl}}/api/auth/login",
+              "host": [ "{{authBaseUrl}}" ],
+              "path": [ "api", "auth", "login" ]
+            },
+            "description": "Logs in as the seed Admin account (provisioned via SEED_ADMIN_EMAIL/SEED_ADMIN_PASSWORD on auth-service startup) and stores the token required by Create/Update/Delete requests below, which now require the Admin role."
+          },
+          "response": []
+        }
+      ]
+    },
     {
       "name": "Categories",
       "item": [
@@ -39,7 +86,8 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" }
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminAccessToken}}" }
             ],
             "body": {
               "mode": "raw",
@@ -50,7 +98,7 @@
               "host": [ "{{baseUrl}}" ],
               "path": [ "api", "categories" ]
             },
-            "description": "Creates a category and stores the returned id in the {{categoryId}} collection variable, so subsequent product requests can reference a valid CategoryId."
+            "description": "Creates a category and stores the returned id in the {{categoryId}} collection variable, so subsequent product requests can reference a valid CategoryId. Run 'Setup' first for an Admin token."
           },
           "response": []
         },
@@ -77,7 +125,8 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" }
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminAccessToken}}" }
             ],
             "body": {
               "mode": "raw",
@@ -158,7 +207,8 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" }
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminAccessToken}}" }
             ],
             "body": {
               "mode": "raw",
@@ -169,7 +219,7 @@
               "host": [ "{{baseUrl}}" ],
               "path": [ "api", "products" ]
             },
-            "description": "Creates a product using {{categoryId}} (set by 'Create Category'). Stores the returned id in {{productId}}. Run 'Create Category' first."
+            "description": "Creates a product using {{categoryId}} (set by 'Create Category'). Stores the returned id in {{productId}}. Run 'Setup' and 'Create Category' first."
           },
           "response": []
         },
@@ -265,7 +315,8 @@
           "request": {
             "method": "PUT",
             "header": [
-              { "key": "Content-Type", "value": "application/json" }
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminAccessToken}}" }
             ],
             "body": {
               "mode": "raw",
@@ -276,7 +327,7 @@
               "host": [ "{{baseUrl}}" ],
               "path": [ "api", "products", "{{productId}}" ]
             },
-            "description": "Updates the product created by 'Create Product'."
+            "description": "Updates the product created by 'Create Product'. Run 'Setup' first for an Admin token."
           },
           "response": []
         },
@@ -297,13 +348,15 @@
           ],
           "request": {
             "method": "DELETE",
-            "header": [],
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminAccessToken}}" }
+            ],
             "url": {
               "raw": "{{baseUrl}}/api/products/{{productId}}",
               "host": [ "{{baseUrl}}" ],
               "path": [ "api", "products", "{{productId}}" ]
             },
-            "description": "Deletes the product created by 'Create Product'."
+            "description": "Deletes the product created by 'Create Product'. Run 'Setup' first for an Admin token."
           },
           "response": []
         }
