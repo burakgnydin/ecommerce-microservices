@@ -123,4 +123,52 @@ public class OrdersApiTests : IAsyncLifetime
         var cancelled = await cancelResponse.Content.ReadFromJsonAsync<OrderResponseDto>();
         Assert.Equal("Cancelled", cancelled!.Status);
     }
+
+    [Fact]
+    public async Task UpdateStatus_RejectsPaid_EvenForOrderOwner()
+    {
+        var userId = Guid.NewGuid();
+        var productId = Guid.NewGuid();
+        _factory.ProductServiceHandler.SetProduct(productId, "Widget", 9.99m, 10);
+        Authenticate(userId);
+        var createResponse = await _client.PostAsJsonAsync("/api/orders", new OrderCreateDto([new OrderItemCreateDto(productId, 1)]));
+        var created = await createResponse.Content.ReadFromJsonAsync<OrderResponseDto>();
+
+        var response = await _client.PatchAsJsonAsync($"/api/orders/{created!.Id}", new OrderStatusUpdateDto("Paid"));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task MarkAsPaid_SetsOrderStatusToPaid_WhenCalledWithServiceRole()
+    {
+        var userId = Guid.NewGuid();
+        var productId = Guid.NewGuid();
+        _factory.ProductServiceHandler.SetProduct(productId, "Widget", 9.99m, 10);
+        Authenticate(userId);
+        var createResponse = await _client.PostAsJsonAsync("/api/orders", new OrderCreateDto([new OrderItemCreateDto(productId, 1)]));
+        var created = await createResponse.Content.ReadFromJsonAsync<OrderResponseDto>();
+
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _factory.CreateServiceToken());
+        var response = await _client.PostAsync($"/api/orders/{created!.Id}/mark-paid", null);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var paid = await response.Content.ReadFromJsonAsync<OrderResponseDto>();
+        Assert.Equal("Paid", paid!.Status);
+    }
+
+    [Fact]
+    public async Task MarkAsPaid_ReturnsForbidden_WhenCallerIsRegularUser()
+    {
+        var userId = Guid.NewGuid();
+        var productId = Guid.NewGuid();
+        _factory.ProductServiceHandler.SetProduct(productId, "Widget", 9.99m, 10);
+        Authenticate(userId);
+        var createResponse = await _client.PostAsJsonAsync("/api/orders", new OrderCreateDto([new OrderItemCreateDto(productId, 1)]));
+        var created = await createResponse.Content.ReadFromJsonAsync<OrderResponseDto>();
+
+        var response = await _client.PostAsync($"/api/orders/{created!.Id}/mark-paid", null);
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
 }

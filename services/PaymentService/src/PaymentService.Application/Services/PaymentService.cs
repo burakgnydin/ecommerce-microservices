@@ -44,7 +44,7 @@ public class PaymentService : IPaymentService
             throw new PaymentDeclinedException($"Payment for order '{dto.OrderId}' was declined.");
         }
 
-        await _orderClient.MarkAsPaidAsync(order.Id, bearerToken, cancellationToken);
+        await _orderClient.MarkAsPaidAsync(order.Id, cancellationToken);
         await _notificationClient.NotifyAsync(order.Id, PaymentNotificationType.PaymentSucceeded, bearerToken, cancellationToken);
 
         return payment.ToDto();

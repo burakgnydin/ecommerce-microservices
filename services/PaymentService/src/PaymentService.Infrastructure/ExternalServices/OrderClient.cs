@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using PaymentService.Application.DTOs;
 using PaymentService.Application.Exceptions;
+using Microsoft.Extensions.Options;
 using PaymentService.Application.Interfaces;
 
 namespace PaymentService.Infrastructure.ExternalServices;
@@ -10,10 +11,12 @@ namespace PaymentService.Infrastructure.ExternalServices;
 public class OrderClient : IOrderClient
 {
     private readonly HttpClient _httpClient;
+    private readonly string _serviceToken;
 
-    public OrderClient(HttpClient httpClient)
+    public OrderClient(HttpClient httpClient, IOptions<OrderServiceOptions> options)
     {
         _httpClient = httpClient;
+        _serviceToken = options.Value.ServiceToken;
     }
 
     public async Task<OrderInfo?> GetOrderAsync(Guid orderId, string bearerToken, CancellationToken cancellationToken = default)
@@ -52,13 +55,10 @@ public class OrderClient : IOrderClient
         return new OrderInfo(order.Id, order.UserId, order.Status, order.TotalAmount);
     }
 
-    public async Task MarkAsPaidAsync(Guid orderId, string bearerToken, CancellationToken cancellationToken = default)
+    public async Task MarkAsPaidAsync(Guid orderId, CancellationToken cancellationToken = default)
     {
-        using var request = new HttpRequestMessage(HttpMethod.Patch, $"api/orders/{orderId}")
-        {
-            Content = JsonContent.Create(new { Status = "Paid" })
-        };
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", bearerToken);
+        using var request = new HttpRequestMessage(HttpMethod.Post, $"api/orders/{orderId}/mark-paid");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _serviceToken);
 
         HttpResponseMessage response;
         try

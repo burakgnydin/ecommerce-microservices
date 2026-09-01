@@ -15,10 +15,12 @@ public interface IOrderClient
     Task<OrderInfo?> GetOrderAsync(Guid orderId, string bearerToken, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Transitions the order to "Paid" on behalf of the caller identified by the bearer token.
+    /// Transitions the order to "Paid" using payment-service's own service identity, not the
+    /// calling user's bearer token — marking an order as paid is a trusted service-to-service
+    /// operation, independent of which user happened to initiate the charge.
     /// </summary>
     /// <exception cref="Exceptions.OrderServiceUnavailableException">
     /// Thrown when order-service cannot be reached or rejects the transition.
     /// </exception>
-    Task MarkAsPaidAsync(Guid orderId, string bearerToken, CancellationToken cancellationToken = default);
+    Task MarkAsPaidAsync(Guid orderId, CancellationToken cancellationToken = default);
 }

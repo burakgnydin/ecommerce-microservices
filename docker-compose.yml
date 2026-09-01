@@ -116,6 +116,7 @@ services:
       ConnectionStrings__PaymentDb: Host=payment-db;Port=5432;Database=payment_service_db;Username=payment_service_user;Password=${PAYMENT_DB_PASSWORD}
       Jwt__PublicKeyPem: ${JWT_PUBLIC_KEY_PEM}
       Services__OrderService__BaseUrl: http://order-service:8080
+      Services__OrderService__ServiceToken: ${PAYMENT_SERVICE_JWT}
       Services__NotificationService__BaseUrl: http://notification-service:8080
     ports:
       - "5103:8080"

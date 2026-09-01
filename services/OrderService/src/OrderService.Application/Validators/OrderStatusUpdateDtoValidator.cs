@@ -8,7 +8,7 @@ public class OrderStatusUpdateDtoValidator : AbstractValidator<OrderStatusUpdate
     public OrderStatusUpdateDtoValidator()
     {
         RuleFor(x => x.Status)
-            .Must(status => status is "Cancelled" or "Paid")
-            .WithMessage("Status must be 'Cancelled' or 'Paid'.");
+            .Must(status => status is "Cancelled")
+            .WithMessage("Status must be 'Cancelled'.");
     }
 }
