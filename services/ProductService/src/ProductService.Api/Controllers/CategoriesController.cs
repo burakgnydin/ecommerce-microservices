@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProductService.Application.DTOs;
 using ProductService.Application.Interfaces;
@@ -37,6 +38,7 @@ public class CategoriesController : ControllerBase
     /// <param name="dto">Category data.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     [HttpPost]
+    [Authorize(Roles = "Admin")]
     [ProducesResponseType<CategoryResponseDto>(StatusCodes.Status201Created)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]

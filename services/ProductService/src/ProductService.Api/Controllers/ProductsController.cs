@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProductService.Application.Common;
 using ProductService.Application.DTOs;
@@ -57,6 +58,7 @@ public class ProductsController : ControllerBase
     /// <param name="dto">Product data.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     [HttpPost]
+    [Authorize(Roles = "Admin")]
     [ProducesResponseType<ProductResponseDto>(StatusCodes.Status201Created)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<ProductResponseDto>> Create(ProductCreateDto dto, CancellationToken cancellationToken)
@@ -72,6 +74,7 @@ public class ProductsController : ControllerBase
     /// <param name="dto">Updated product data.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     [HttpPut("{id:guid}")]
+    [Authorize(Roles = "Admin")]
     [ProducesResponseType<ProductResponseDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
@@ -87,6 +90,7 @@ public class ProductsController : ControllerBase
     /// <param name="id">Product id.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     [HttpDelete("{id:guid}")]
+    [Authorize(Roles = "Admin")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)

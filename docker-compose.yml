@@ -22,6 +22,7 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       ConnectionStrings__ProductDb: Host=product-db;Port=5432;Database=product_service_db;Username=product_service_user;Password=${PRODUCT_DB_PASSWORD}
+      Jwt__PublicKeyPem: ${JWT_PUBLIC_KEY_PEM}
     ports:
       - "8080:8080"
     depends_on:
