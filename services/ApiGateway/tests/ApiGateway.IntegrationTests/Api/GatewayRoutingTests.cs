@@ -27,6 +27,8 @@ public class GatewayRoutingTests : IAsyncLifetime
     [InlineData("/auth/api/auth/login", "api/auth/login")]
     [InlineData("/products/api/products/1", "api/products/1")]
     [InlineData("/orders/api/orders", "api/orders")]
+    [InlineData("/payments/api/payments", "api/payments")]
+    [InlineData("/notifications/api/notifications", "api/notifications")]
     public async Task Route_ForwardsToCluster_WithPrefixStripped(string requestPath, string expectedForwardedPath)
     {
         var response = await _client.GetAsync(requestPath);

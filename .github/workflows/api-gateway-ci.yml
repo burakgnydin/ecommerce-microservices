@@ -1,0 +1,44 @@
+name: API Gateway CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "services/ApiGateway/**"
+      - ".github/workflows/api-gateway-ci.yml"
+  pull_request:
+    paths:
+      - "services/ApiGateway/**"
+      - ".github/workflows/api-gateway-ci.yml"
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: services/ApiGateway
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Restore dependencies
+        run: dotnet restore ApiGateway.slnx
+
+      - name: Build
+        run: dotnet build ApiGateway.slnx --no-restore
+
+      - name: Run tests (Unit + Integration)
+        # No database is involved (api-gateway is stateless). IntegrationTests points YARP's
+        # clusters at an in-process FakeDownstreamServer, so no real backend services or
+        # Testcontainers setup is required.
+        run: dotnet test ApiGateway.slnx --no-build
+
+      - name: Scan for vulnerable packages
+        run: dotnet list ApiGateway.slnx package --vulnerable --include-transitive

@@ -28,6 +28,7 @@ public class PaymentServiceApiFactory : WebApplicationFactory<Program>
     private readonly RSA _signingKey = RSA.Create();
 
     public StubOrderServiceHandler OrderServiceHandler { get; } = new();
+    public StubNotificationServiceHandler NotificationServiceHandler { get; } = new();
 
     public PaymentServiceApiFactory(string connectionString)
     {
@@ -66,6 +67,12 @@ public class PaymentServiceApiFactory : WebApplicationFactory<Program>
                 })
                 .ConfigurePrimaryHttpMessageHandler(() => OrderServiceHandler);
 
+            services.AddHttpClient<INotificationClient, NotificationClient>(client =>
+                {
+                    client.BaseAddress = new Uri("http://notification-service.test/");
+                })
+                .ConfigurePrimaryHttpMessageHandler(() => NotificationServiceHandler);
+
             services.Configure<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme, options =>
             {
                 options.TokenValidationParameters = new TokenValidationParameters
@@ -89,6 +96,7 @@ public class PaymentServiceApiFactory : WebApplicationFactory<Program>
         {
             _signingKey.Dispose();
             OrderServiceHandler.Dispose();
+            NotificationServiceHandler.Dispose();
         }
     }
 }

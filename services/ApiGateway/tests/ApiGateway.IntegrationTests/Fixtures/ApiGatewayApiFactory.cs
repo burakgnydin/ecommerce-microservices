@@ -27,7 +27,9 @@ public class ApiGatewayApiFactory : WebApplicationFactory<Program>
             {
                 ["ReverseProxy:Clusters:auth-cluster:Destinations:destination1:Address"] = _downstreamAddress,
                 ["ReverseProxy:Clusters:products-cluster:Destinations:destination1:Address"] = _downstreamAddress,
-                ["ReverseProxy:Clusters:orders-cluster:Destinations:destination1:Address"] = _downstreamAddress
+                ["ReverseProxy:Clusters:orders-cluster:Destinations:destination1:Address"] = _downstreamAddress,
+                ["ReverseProxy:Clusters:payments-cluster:Destinations:destination1:Address"] = _downstreamAddress,
+                ["ReverseProxy:Clusters:notifications-cluster:Destinations:destination1:Address"] = _downstreamAddress
             });
         });
     }
