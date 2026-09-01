@@ -26,9 +26,11 @@ public class AuthController : ControllerBase
     /// <param name="dto">Registration data.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     [HttpPost("register")]
+    [EnableRateLimiting("register")]
     [ProducesResponseType<UserResponseDto>(StatusCodes.Status201Created)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+    [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
     public async Task<ActionResult<UserResponseDto>> Register(RegisterRequestDto dto, CancellationToken cancellationToken)
     {
         var result = await _authService.RegisterAsync(dto, cancellationToken);
