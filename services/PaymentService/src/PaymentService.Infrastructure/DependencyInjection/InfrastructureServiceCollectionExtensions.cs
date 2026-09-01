@@ -28,6 +28,13 @@ public static class InfrastructureServiceCollectionExtensions
             })
             .AddStandardResilienceHandler();
 
+        services.AddHttpClient<INotificationClient, NotificationClient>(client =>
+            {
+                client.BaseAddress = new Uri(configuration["Services:NotificationService:BaseUrl"]
+                    ?? throw new InvalidOperationException("Services:NotificationService:BaseUrl is not configured."));
+            })
+            .AddStandardResilienceHandler();
+
         var jwtOptions = configuration.GetSection("Jwt").Get<JwtOptions>() ?? new JwtOptions();
         var jwtVerificationRsa = RSA.Create();
         jwtVerificationRsa.ImportFromPem(jwtOptions.PublicKeyPem);

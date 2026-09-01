@@ -10,11 +10,13 @@ public class PaymentService : IPaymentService
 {
     private readonly IPaymentRepository _paymentRepository;
     private readonly IOrderClient _orderClient;
+    private readonly INotificationClient _notificationClient;
 
-    public PaymentService(IPaymentRepository paymentRepository, IOrderClient orderClient)
+    public PaymentService(IPaymentRepository paymentRepository, IOrderClient orderClient, INotificationClient notificationClient)
     {
         _paymentRepository = paymentRepository;
         _orderClient = orderClient;
+        _notificationClient = notificationClient;
     }
 
     public async Task<PaymentResponseDto> ChargeAsync(Guid userId, PaymentRequestDto dto, string bearerToken, CancellationToken cancellationToken = default)
@@ -38,10 +40,12 @@ public class PaymentService : IPaymentService
 
         if (!approved)
         {
+            await _notificationClient.NotifyAsync(order.Id, PaymentNotificationType.PaymentFailed, bearerToken, cancellationToken);
             throw new PaymentDeclinedException($"Payment for order '{dto.OrderId}' was declined.");
         }
 
         await _orderClient.MarkAsPaidAsync(order.Id, bearerToken, cancellationToken);
+        await _notificationClient.NotifyAsync(order.Id, PaymentNotificationType.PaymentSucceeded, bearerToken, cancellationToken);
 
         return payment.ToDto();
     }

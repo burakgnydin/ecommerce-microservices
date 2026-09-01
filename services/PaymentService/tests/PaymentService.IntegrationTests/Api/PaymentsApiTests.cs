@@ -52,6 +52,7 @@ public class PaymentsApiTests : IAsyncLifetime
         Assert.Equal("Succeeded", payment!.Status);
         Assert.Equal(19.98m, payment.Amount);
         Assert.Contains(orderId, _factory.OrderServiceHandler.MarkedAsPaidOrderIds);
+        Assert.Contains((orderId, (int)PaymentNotificationType.PaymentSucceeded), _factory.NotificationServiceHandler.Notifications);
     }
 
     [Fact]
@@ -97,6 +98,7 @@ public class PaymentsApiTests : IAsyncLifetime
 
         Assert.Equal(HttpStatusCode.PaymentRequired, response.StatusCode);
         Assert.Empty(_factory.OrderServiceHandler.MarkedAsPaidOrderIds);
+        Assert.Contains((orderId, (int)PaymentNotificationType.PaymentFailed), _factory.NotificationServiceHandler.Notifications);
     }
 
     [Fact]
