@@ -64,7 +64,8 @@ public class OrdersController : ControllerBase
 
     /// <summary>
     /// Updates the status of an order owned by the authenticated user. Supports transitioning
-    /// to "Cancelled" or "Paid".
+    /// to "Cancelled" only — marking an order as paid is a service-to-service operation, see
+    /// <see cref="MarkAsPaid"/>.
     /// </summary>
     /// <param name="id">Order id.</param>
     /// <param name="dto">Requested status.</param>
@@ -78,10 +79,26 @@ public class OrdersController : ControllerBase
         var result = dto.Status switch
         {
             "Cancelled" => await _orderService.CancelAsync(id, GetUserId(), cancellationToken),
-            "Paid" => await _orderService.MarkAsPaidAsync(id, GetUserId(), cancellationToken),
             _ => throw new ArgumentOutOfRangeException(nameof(dto), dto.Status, "Unsupported order status.")
         };
 
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Marks an order as paid. Restricted to trusted services (e.g. payment-service after a
+    /// successful charge) via the "Service" role claim — not exposed to end users.
+    /// </summary>
+    /// <param name="id">Order id.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    [HttpPost("{id:guid}/mark-paid")]
+    [Authorize(Roles = "Service")]
+    [ProducesResponseType<OrderResponseDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<OrderResponseDto>> MarkAsPaid(Guid id, CancellationToken cancellationToken)
+    {
+        var result = await _orderService.MarkAsPaidAsync(id, cancellationToken);
         return Ok(result);
     }
 

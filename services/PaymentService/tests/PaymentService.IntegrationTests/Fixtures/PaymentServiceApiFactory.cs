@@ -61,6 +61,8 @@ public class PaymentServiceApiFactory : WebApplicationFactory<Program>
 
             services.AddDbContext<PaymentDbContext>(options => options.UseNpgsql(_connectionString));
 
+            services.Configure<OrderServiceOptions>(options => options.ServiceToken = "test-service-token");
+
             services.AddHttpClient<IOrderClient, OrderClient>(client =>
                 {
                     client.BaseAddress = new Uri("http://order-service.test/");

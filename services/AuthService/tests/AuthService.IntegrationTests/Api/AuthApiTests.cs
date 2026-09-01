@@ -59,6 +59,23 @@ public class AuthApiTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Register_ReturnsTooManyRequests_AfterExceedingRateLimit()
+    {
+        for (var i = 0; i < 5; i++)
+        {
+            var email = $"jane-{Guid.NewGuid()}@example.com";
+            var response = await _client.PostAsJsonAsync(
+                "/api/auth/register", new RegisterRequestDto("Jane Doe", email, "P@ssw0rd!"));
+            Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        }
+
+        var throttledResponse = await _client.PostAsJsonAsync(
+            "/api/auth/register", new RegisterRequestDto("Jane Doe", $"jane-{Guid.NewGuid()}@example.com", "P@ssw0rd!"));
+
+        Assert.Equal(HttpStatusCode.TooManyRequests, throttledResponse.StatusCode);
+    }
+
+    [Fact]
     public async Task Login_ReturnsUnauthorized_WhenPasswordIsIncorrect()
     {
         var email = $"jane-{Guid.NewGuid()}@example.com";

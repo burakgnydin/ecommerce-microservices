@@ -41,7 +41,7 @@ public class PaymentServiceTests
         Assert.Equal(order.TotalAmount, result.Amount);
         Assert.Equal("**** **** **** 1234", result.MaskedCardNumber);
         _paymentRepository.Verify(r => r.CreateAsync(It.Is<Payment>(p => p.Status == PaymentStatus.Succeeded), It.IsAny<CancellationToken>()), Times.Once);
-        _orderClient.Verify(c => c.MarkAsPaidAsync(orderId, bearerToken, It.IsAny<CancellationToken>()), Times.Once);
+        _orderClient.Verify(c => c.MarkAsPaidAsync(orderId, It.IsAny<CancellationToken>()), Times.Once);
         _notificationClient.Verify(c => c.NotifyAsync(orderId, PaymentNotificationType.PaymentSucceeded, bearerToken, It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -58,7 +58,7 @@ public class PaymentServiceTests
             () => _sut.ChargeAsync(userId, CreateRequest(orderId, "4111111111110000"), bearerToken));
 
         _paymentRepository.Verify(r => r.CreateAsync(It.Is<Payment>(p => p.Status == PaymentStatus.Failed), It.IsAny<CancellationToken>()), Times.Once);
-        _orderClient.Verify(c => c.MarkAsPaidAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        _orderClient.Verify(c => c.MarkAsPaidAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
         _notificationClient.Verify(c => c.NotifyAsync(orderId, PaymentNotificationType.PaymentFailed, bearerToken, It.IsAny<CancellationToken>()), Times.Once);
     }
 

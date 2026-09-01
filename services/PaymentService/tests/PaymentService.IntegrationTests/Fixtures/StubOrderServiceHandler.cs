@@ -19,13 +19,14 @@ public class StubOrderServiceHandler : HttpMessageHandler
 
     protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
-        var orderId = Guid.Parse(request.RequestUri!.Segments[^1]);
-
-        if (request.Method == HttpMethod.Patch)
+        if (request.Method == HttpMethod.Post && request.RequestUri!.Segments[^1] == "mark-paid")
         {
-            MarkedAsPaidOrderIds.Add(orderId);
+            var markPaidOrderId = Guid.Parse(request.RequestUri.Segments[^2].TrimEnd('/'));
+            MarkedAsPaidOrderIds.Add(markPaidOrderId);
             return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK));
         }
+
+        var orderId = Guid.Parse(request.RequestUri!.Segments[^1]);
 
         if (!_orders.TryGetValue(orderId, out var order))
         {

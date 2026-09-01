@@ -48,6 +48,20 @@ public class OrderServiceApiFactory : WebApplicationFactory<Program>
         return handler.WriteToken(token);
     }
 
+    public string CreateServiceToken()
+    {
+        var handler = new JwtSecurityTokenHandler();
+        var credentials = new SigningCredentials(new RsaSecurityKey(_signingKey), SecurityAlgorithms.RsaSha256);
+        var token = new JwtSecurityToken(
+            issuer: TestIssuer,
+            audience: TestAudience,
+            claims: [new Claim(JwtRegisteredClaimNames.Sub, "payment-service"), new Claim(ClaimTypes.Role, "Service")],
+            expires: DateTime.UtcNow.AddMinutes(5),
+            signingCredentials: credentials);
+
+        return handler.WriteToken(token);
+    }
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Development");

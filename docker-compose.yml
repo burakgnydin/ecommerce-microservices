@@ -22,6 +22,7 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       ConnectionStrings__ProductDb: Host=product-db;Port=5432;Database=product_service_db;Username=product_service_user;Password=${PRODUCT_DB_PASSWORD}
+      Jwt__PublicKeyPem: ${JWT_PUBLIC_KEY_PEM}
     ports:
       - "8080:8080"
     depends_on:
@@ -52,6 +53,8 @@ services:
       ASPNETCORE_ENVIRONMENT: Production
       ConnectionStrings__AuthDb: Host=auth-db;Port=5432;Database=auth_service_db;Username=auth_service_user;Password=${AUTH_DB_PASSWORD}
       Jwt__PrivateKeyPem: ${JWT_PRIVATE_KEY_PEM}
+      SeedAdmin__Email: ${SEED_ADMIN_EMAIL}
+      SeedAdmin__Password: ${SEED_ADMIN_PASSWORD}
     ports:
       - "5101:8080"
     depends_on:
@@ -116,6 +119,7 @@ services:
       ConnectionStrings__PaymentDb: Host=payment-db;Port=5432;Database=payment_service_db;Username=payment_service_user;Password=${PAYMENT_DB_PASSWORD}
       Jwt__PublicKeyPem: ${JWT_PUBLIC_KEY_PEM}
       Services__OrderService__BaseUrl: http://order-service:8080
+      Services__OrderService__ServiceToken: ${PAYMENT_SERVICE_JWT}
       Services__NotificationService__BaseUrl: http://notification-service:8080
     ports:
       - "5103:8080"

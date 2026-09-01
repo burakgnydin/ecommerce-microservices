@@ -12,7 +12,8 @@
     { "key": "categoryId", "value": "", "type": "string" },
     { "key": "productId", "value": "", "type": "string" },
     { "key": "orderId", "value": "", "type": "string" },
-    { "key": "unknownOrderId", "value": "", "type": "string" }
+    { "key": "unknownOrderId", "value": "", "type": "string" },
+    { "key": "adminAccessToken", "value": "", "type": "string" }
   ],
   "item": [
     {
@@ -102,6 +103,47 @@
           "response": []
         },
         {
+          "name": "Login as Seed Admin (AuthService)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const jsonData = pm.response.json();",
+                  "",
+                  "pm.test(\"Response has an accessToken\", function () {",
+                  "    pm.expect(jsonData.accessToken).to.be.a(\"string\");",
+                  "});",
+                  "",
+                  "pm.collectionVariables.set(\"adminAccessToken\", jsonData.accessToken);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{seedAdminEmail}}\",\n  \"password\": \"{{seedAdminPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{authBaseUrl}}/api/auth/login",
+              "host": [ "{{authBaseUrl}}" ],
+              "path": [ "api", "auth", "login" ]
+            },
+            "description": "Logs in as the seed Admin account (provisioned via SEED_ADMIN_EMAIL/SEED_ADMIN_PASSWORD on auth-service startup) and stores the token required by 'Create Category (ProductService)'/'Create Product (ProductService)', which now require the Admin role."
+          },
+          "response": []
+        },
+        {
           "name": "Create Category (ProductService)",
           "event": [
             {
@@ -127,7 +169,8 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" }
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminAccessToken}}" }
             ],
             "body": {
               "mode": "raw",
@@ -168,7 +211,8 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" }
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminAccessToken}}" }
             ],
             "body": {
               "mode": "raw",

@@ -69,9 +69,10 @@ public class OrderService : IOrderService
         return order.ToDto();
     }
 
-    public async Task<OrderResponseDto> MarkAsPaidAsync(Guid orderId, Guid userId, CancellationToken cancellationToken = default)
+    public async Task<OrderResponseDto> MarkAsPaidAsync(Guid orderId, CancellationToken cancellationToken = default)
     {
-        var order = await GetOwnedOrderAsync(orderId, userId, cancellationToken);
+        var order = await _orderRepository.GetByIdAsync(orderId, cancellationToken)
+            ?? throw new NotFoundException($"Order '{orderId}' was not found.");
 
         try
         {

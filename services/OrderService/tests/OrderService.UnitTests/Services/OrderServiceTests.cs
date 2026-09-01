@@ -136,25 +136,25 @@ public class OrderServiceTests
     }
 
     [Fact]
-    public async Task MarkAsPaidAsync_MarksOrderAsPaid_WhenPendingAndOwnedByUser()
+    public async Task MarkAsPaidAsync_MarksOrderAsPaid_WhenPending()
     {
         var userId = Guid.NewGuid();
         var order = new Order(userId, [new OrderItem(Guid.NewGuid(), "Widget", 9.99m, 1)]);
         _orderRepository.Setup(r => r.GetByIdAsync(order.Id, It.IsAny<CancellationToken>())).ReturnsAsync(order);
 
-        var result = await _sut.MarkAsPaidAsync(order.Id, userId);
+        var result = await _sut.MarkAsPaidAsync(order.Id);
 
         Assert.Equal("Paid", result.Status);
         _orderRepository.Verify(r => r.UpdateAsync(order, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
-    public async Task MarkAsPaidAsync_Throws_WhenOrderIsNotOwnedByUser()
+    public async Task MarkAsPaidAsync_Throws_WhenOrderNotFound()
     {
-        var order = new Order(Guid.NewGuid(), [new OrderItem(Guid.NewGuid(), "Widget", 9.99m, 1)]);
-        _orderRepository.Setup(r => r.GetByIdAsync(order.Id, It.IsAny<CancellationToken>())).ReturnsAsync(order);
+        var orderId = Guid.NewGuid();
+        _orderRepository.Setup(r => r.GetByIdAsync(orderId, It.IsAny<CancellationToken>())).ReturnsAsync((Order?)null);
 
-        await Assert.ThrowsAsync<NotFoundException>(() => _sut.MarkAsPaidAsync(order.Id, Guid.NewGuid()));
+        await Assert.ThrowsAsync<NotFoundException>(() => _sut.MarkAsPaidAsync(orderId));
     }
 
     [Fact]
@@ -165,6 +165,6 @@ public class OrderServiceTests
         order.MarkAsPaid();
         _orderRepository.Setup(r => r.GetByIdAsync(order.Id, It.IsAny<CancellationToken>())).ReturnsAsync(order);
 
-        await Assert.ThrowsAsync<InvalidOrderStatusException>(() => _sut.MarkAsPaidAsync(order.Id, userId));
+        await Assert.ThrowsAsync<InvalidOrderStatusException>(() => _sut.MarkAsPaidAsync(order.Id));
     }
 }

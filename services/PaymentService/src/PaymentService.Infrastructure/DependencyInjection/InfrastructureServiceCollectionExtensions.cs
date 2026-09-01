@@ -21,6 +21,8 @@ public static class InfrastructureServiceCollectionExtensions
 
         services.AddScoped<IPaymentRepository, PaymentRepository>();
 
+        services.Configure<OrderServiceOptions>(configuration.GetSection("Services:OrderService"));
+
         services.AddHttpClient<IOrderClient, OrderClient>(client =>
             {
                 client.BaseAddress = new Uri(configuration["Services:OrderService:BaseUrl"]
