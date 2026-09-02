@@ -11,6 +11,7 @@ namespace ProductService.Application.DTOs;
 /// <param name="CategoryId">Id of the category the product belongs to.</param>
 /// <param name="CategoryName">Name of the category the product belongs to.</param>
 /// <param name="AllowsPreOrder">Whether the product can be ordered beyond available stock.</param>
+/// <param name="ImageUrl">URL of a product image, if any.</param>
 /// <param name="CreatedAt">Date and time the product was created, in UTC.</param>
 public record ProductResponseDto(
     Guid Id,
@@ -21,4 +22,5 @@ public record ProductResponseDto(
     Guid CategoryId,
     string? CategoryName,
     bool AllowsPreOrder,
+    string? ImageUrl,
     DateTime CreatedAt);

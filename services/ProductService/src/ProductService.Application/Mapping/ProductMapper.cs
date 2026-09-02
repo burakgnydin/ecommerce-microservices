@@ -16,11 +16,12 @@ public static class ProductMapper
             product.CategoryId,
             product.Category?.Name,
             product.AllowsPreOrder,
+            product.ImageUrl,
             product.CreatedAt);
     }
 
     public static Product ToEntity(this ProductCreateDto dto)
     {
-        return new Product(dto.Name, dto.Description, dto.Price, dto.Stock, dto.CategoryId, dto.AllowsPreOrder);
+        return new Product(dto.Name, dto.Description, dto.Price, dto.Stock, dto.CategoryId, dto.AllowsPreOrder, dto.ImageUrl);
     }
 }

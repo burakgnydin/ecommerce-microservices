@@ -6,7 +6,7 @@ namespace ProductService.Application.Interfaces;
 public interface IProductService
 {
     Task<ProductResponseDto> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
-    Task<PagedResult<ProductResponseDto>> GetAllAsync(int pageNumber, int pageSize, CancellationToken cancellationToken = default);
+    Task<PagedResult<ProductResponseDto>> GetAllAsync(int pageNumber, int pageSize, Guid? categoryId = null, string? search = null, CancellationToken cancellationToken = default);
     Task<ProductResponseDto> CreateAsync(ProductCreateDto dto, CancellationToken cancellationToken = default);
     Task<ProductResponseDto> UpdateAsync(Guid id, ProductUpdateDto dto, CancellationToken cancellationToken = default);
     Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
