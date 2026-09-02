@@ -21,12 +21,25 @@ public class ProductRepository : IProductRepository
             .FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
     }
 
-    public async Task<PagedResult<Product>> GetAllAsync(int pageNumber, int pageSize, CancellationToken cancellationToken = default)
+    public async Task<PagedResult<Product>> GetAllAsync(int pageNumber, int pageSize, Guid? categoryId = null, string? search = null, CancellationToken cancellationToken = default)
     {
-        var query = _context.Products
+        IQueryable<Product> query = _context.Products
             .Include(p => p.Category)
             .AsNoTracking()
-            .OrderBy(p => p.CreatedAt);
+            .Where(p => categoryId == null || p.CategoryId == categoryId);
+
+        if (string.IsNullOrWhiteSpace(search))
+        {
+            query = query.OrderBy(p => p.CreatedAt);
+        }
+        else
+        {
+            query = query
+                .Where(p => EF.Functions.ILike(p.Name, $"%{search}%")
+                    || (p.Description != null && EF.Functions.ILike(p.Description, $"%{search}%"))
+                    || EF.Functions.TrigramsWordSimilarity(search, p.Name) > 0.4)
+                .OrderByDescending(p => EF.Functions.TrigramsWordSimilarity(search, p.Name));
+        }
 
         var totalCount = await query.CountAsync(cancellationToken);
 

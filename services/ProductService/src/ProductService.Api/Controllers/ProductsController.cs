@@ -26,15 +26,19 @@ public class ProductsController : ControllerBase
     /// </summary>
     /// <param name="pageNumber">Page number, starting at 1.</param>
     /// <param name="pageSize">Number of items per page (1-100).</param>
+    /// <param name="categoryId">Optional category id to filter by.</param>
+    /// <param name="search">Optional fuzzy text search across product name and description.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     [HttpGet]
     [ProducesResponseType<PagedResult<ProductResponseDto>>(StatusCodes.Status200OK)]
     public async Task<ActionResult<PagedResult<ProductResponseDto>>> GetAll(
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 20,
+        [FromQuery] Guid? categoryId = null,
+        [FromQuery] string? search = null,
         CancellationToken cancellationToken = default)
     {
-        var result = await _productService.GetAllAsync(pageNumber, pageSize, cancellationToken);
+        var result = await _productService.GetAllAsync(pageNumber, pageSize, categoryId, search, cancellationToken);
         return Ok(result);
     }
 

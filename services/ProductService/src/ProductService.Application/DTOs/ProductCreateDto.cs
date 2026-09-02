@@ -9,10 +9,12 @@ namespace ProductService.Application.DTOs;
 /// <param name="Stock">Available stock quantity. Cannot be negative.</param>
 /// <param name="CategoryId">Id of an existing category the product belongs to.</param>
 /// <param name="AllowsPreOrder">Whether the product can be ordered beyond available stock.</param>
+/// <param name="ImageUrl">Optional URL of a product image.</param>
 public record ProductCreateDto(
     string Name,
     string? Description,
     decimal Price,
     int Stock,
     Guid CategoryId,
-    bool AllowsPreOrder = false);
+    bool AllowsPreOrder = false,
+    string? ImageUrl = null);

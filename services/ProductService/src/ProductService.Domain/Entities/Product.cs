@@ -10,9 +10,10 @@ public class Product
     public Guid CategoryId { get; private set; }
     public Category? Category { get; private set; }
     public bool AllowsPreOrder { get; private set; }
+    public string? ImageUrl { get; private set; }
     public DateTime CreatedAt { get; private set; }
 
-    public Product(string name, string? description, decimal price, int stock, Guid categoryId, bool allowsPreOrder = false)
+    public Product(string name, string? description, decimal price, int stock, Guid categoryId, bool allowsPreOrder = false, string? imageUrl = null)
     {
         Validate(name, description, price, stock);
 
@@ -23,10 +24,11 @@ public class Product
         Stock = stock;
         CategoryId = categoryId;
         AllowsPreOrder = allowsPreOrder;
+        ImageUrl = imageUrl;
         CreatedAt = DateTime.UtcNow;
     }
 
-    public void UpdateDetails(string name, string? description, decimal price, int stock, Guid categoryId, bool allowsPreOrder)
+    public void UpdateDetails(string name, string? description, decimal price, int stock, Guid categoryId, bool allowsPreOrder, string? imageUrl = null)
     {
         Validate(name, description, price, stock);
 
@@ -36,6 +38,7 @@ public class Product
         Stock = stock;
         CategoryId = categoryId;
         AllowsPreOrder = allowsPreOrder;
+        ImageUrl = imageUrl;
     }
 
     private static void Validate(string name, string? description, decimal price, int stock)
