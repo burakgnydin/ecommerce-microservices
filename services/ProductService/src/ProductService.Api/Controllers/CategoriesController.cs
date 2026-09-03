@@ -47,4 +47,38 @@ public class CategoriesController : ControllerBase
         var result = await _categoryService.CreateAsync(dto, cancellationToken);
         return CreatedAtAction(nameof(GetAll), result);
     }
+
+    /// <summary>
+    /// Updates an existing category.
+    /// </summary>
+    /// <param name="id">Category id.</param>
+    /// <param name="dto">Updated category data.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    [HttpPut("{id:guid}")]
+    [Authorize(Roles = "Admin")]
+    [ProducesResponseType<CategoryResponseDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<CategoryResponseDto>> Update(Guid id, CategoryUpdateDto dto, CancellationToken cancellationToken)
+    {
+        var result = await _categoryService.UpdateAsync(id, dto, cancellationToken);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Deletes a category.
+    /// </summary>
+    /// <param name="id">Category id.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    [HttpDelete("{id:guid}")]
+    [Authorize(Roles = "Admin")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
+    {
+        await _categoryService.DeleteAsync(id, cancellationToken);
+        return NoContent();
+    }
 }

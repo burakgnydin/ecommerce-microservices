@@ -38,6 +38,14 @@ export interface Category {
   name: string
 }
 
+export interface CategoryCreateRequest {
+  name: string
+}
+
+export interface CategoryUpdateRequest {
+  name: string
+}
+
 export interface Product {
   id: string
   name: string
@@ -49,6 +57,26 @@ export interface Product {
   allowsPreOrder: boolean
   imageUrl: string | null
   createdAt: string
+}
+
+export interface ProductCreateRequest {
+  name: string
+  description: string | null
+  price: number
+  stock: number
+  categoryId: string
+  allowsPreOrder: boolean
+  imageUrl: string | null
+}
+
+export interface ProductUpdateRequest {
+  name: string
+  description: string | null
+  price: number
+  stock: number
+  categoryId: string
+  allowsPreOrder: boolean
+  imageUrl: string | null
 }
 
 export interface PagedResult<T> {

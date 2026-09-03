@@ -8,12 +8,24 @@ public class Category
 
     public Category(string name)
     {
+        Validate(name);
+
+        Id = Guid.NewGuid();
+        Name = name;
+    }
+
+    public void UpdateName(string name)
+    {
+        Validate(name);
+
+        Name = name;
+    }
+
+    private static void Validate(string name)
+    {
         if (string.IsNullOrWhiteSpace(name))
             throw new ArgumentException("Category name is required.", nameof(name));
         if (name.Length > 100)
             throw new ArgumentException("Category name cannot exceed 100 characters.", nameof(name));
-
-        Id = Guid.NewGuid();
-        Name = name;
     }
 }

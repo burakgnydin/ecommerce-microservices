@@ -1,14 +1,191 @@
+import { type FormEvent, useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { Pencil, Plus, Trash2 } from 'lucide-react'
+import { createCategory, deleteCategory, getCategories, updateCategory } from '../api/categories'
+import { ApiError, translateApiError } from '../api/client'
+import { createProduct, deleteProduct, getProducts, updateProduct } from '../api/products'
+import type { Category, Product, ProductCreateRequest } from '../api/types'
+import { getMe } from '../api/users'
+import { ProductForm } from '../components/admin/ProductForm'
 import { Header } from '../components/Header'
+import { ProductImage } from '../components/ProductImage'
 import { AdminOverviewSlider } from '../components/ui/AdminOverviewSlider'
 import { Banner } from '../components/ui/Banner'
+import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
+import { ConfirmModal } from '../components/ui/ConfirmModal'
+import { Skeleton } from '../components/ui/Skeleton'
+import { getAccessToken } from '../lib/auth'
 
-const upcomingSections = [
-  { title: 'Ürün ve Kategori Yönetimi', description: 'Ürün ve kategori ekleme, düzenleme, silme işlemleri.' },
-  { title: 'Sipariş ve Ödeme Genel Bakışı', description: 'Sipariş durumları ve ödeme takibi.' },
-]
+const inputClasses =
+  'h-10 w-full rounded-md border border-border bg-card px-3 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring'
+
+function formatPrice(price: number) {
+  return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(price)
+}
 
 export default function AdminPage() {
+  const navigate = useNavigate()
+  const [isAuthorized, setIsAuthorized] = useState(false)
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true)
+
+  const [categories, setCategories] = useState<Category[]>([])
+  const [products, setProducts] = useState<Product[]>([])
+  const [isLoadingData, setIsLoadingData] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
+
+  const [newCategoryName, setNewCategoryName] = useState('')
+  const [isAddingCategory, setIsAddingCategory] = useState(false)
+  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null)
+  const [editingCategoryName, setEditingCategoryName] = useState('')
+  const [isSavingCategory, setIsSavingCategory] = useState(false)
+  const [categoryError, setCategoryError] = useState<string | null>(null)
+  const [deleteCategoryTarget, setDeleteCategoryTarget] = useState<Category | null>(null)
+  const [isDeletingCategory, setIsDeletingCategory] = useState(false)
+
+  const [productFormMode, setProductFormMode] = useState<'create' | 'edit' | null>(null)
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null)
+  const [isSavingProduct, setIsSavingProduct] = useState(false)
+  const [productError, setProductError] = useState<string | null>(null)
+  const [deleteProductTarget, setDeleteProductTarget] = useState<Product | null>(null)
+  const [isDeletingProduct, setIsDeletingProduct] = useState(false)
+
+  useEffect(() => {
+    if (!getAccessToken()) {
+      navigate('/login')
+      return
+    }
+
+    getMe()
+      .then((user) => {
+        if (user.role !== 'Admin') {
+          navigate('/')
+          return
+        }
+        setIsAuthorized(true)
+      })
+      .catch(() => navigate('/'))
+      .finally(() => setIsCheckingAuth(false))
+  }, [navigate])
+
+  function loadData() {
+    setIsLoadingData(true)
+    setLoadError(null)
+    Promise.all([getCategories(), getProducts(1, 100)])
+      .then(([categoriesResult, productsResult]) => {
+        setCategories(categoriesResult)
+        setProducts(productsResult.items)
+      })
+      .catch((err) => setLoadError(err instanceof ApiError ? err.message : 'Veriler yüklenemedi.'))
+      .finally(() => setIsLoadingData(false))
+  }
+
+  useEffect(() => {
+    if (isAuthorized) loadData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthorized])
+
+  async function handleAddCategory(event: FormEvent) {
+    event.preventDefault()
+    setCategoryError(null)
+    setIsAddingCategory(true)
+    try {
+      const category = await createCategory({ name: newCategoryName })
+      setCategories((prev) => [...prev, category].sort((a, b) => a.name.localeCompare(b.name)))
+      setNewCategoryName('')
+    } catch (err) {
+      setCategoryError(translateApiError(err, 'Kategori eklenemedi, tekrar deneyin.'))
+    } finally {
+      setIsAddingCategory(false)
+    }
+  }
+
+  function handleStartEditCategory(category: Category) {
+    setCategoryError(null)
+    setEditingCategoryId(category.id)
+    setEditingCategoryName(category.name)
+  }
+
+  async function handleSaveCategory(event: FormEvent) {
+    event.preventDefault()
+    if (!editingCategoryId) return
+    setCategoryError(null)
+    setIsSavingCategory(true)
+    try {
+      const updated = await updateCategory(editingCategoryId, { name: editingCategoryName })
+      setCategories((prev) =>
+        prev.map((c) => (c.id === updated.id ? updated : c)).sort((a, b) => a.name.localeCompare(b.name)),
+      )
+      setEditingCategoryId(null)
+    } catch (err) {
+      setCategoryError(translateApiError(err, 'Kategori güncellenemedi, tekrar deneyin.'))
+    } finally {
+      setIsSavingCategory(false)
+    }
+  }
+
+  async function handleConfirmDeleteCategory() {
+    if (!deleteCategoryTarget) return
+    setCategoryError(null)
+    setIsDeletingCategory(true)
+    try {
+      await deleteCategory(deleteCategoryTarget.id)
+      setCategories((prev) => prev.filter((c) => c.id !== deleteCategoryTarget.id))
+      setDeleteCategoryTarget(null)
+    } catch (err) {
+      setCategoryError(translateApiError(err, 'Kategori silinemedi, tekrar deneyin.'))
+      setDeleteCategoryTarget(null)
+    } finally {
+      setIsDeletingCategory(false)
+    }
+  }
+
+  async function handleProductSubmit(dto: ProductCreateRequest) {
+    setProductError(null)
+    setIsSavingProduct(true)
+    try {
+      if (productFormMode === 'edit' && editingProduct) {
+        await updateProduct(editingProduct.id, dto)
+      } else {
+        await createProduct(dto)
+      }
+      setProductFormMode(null)
+      setEditingProduct(null)
+      loadData()
+    } catch (err) {
+      setProductError(translateApiError(err, 'Ürün kaydedilemedi, tekrar deneyin.'))
+    } finally {
+      setIsSavingProduct(false)
+    }
+  }
+
+  async function handleConfirmDeleteProduct() {
+    if (!deleteProductTarget) return
+    setProductError(null)
+    setIsDeletingProduct(true)
+    try {
+      await deleteProduct(deleteProductTarget.id)
+      setProducts((prev) => prev.filter((p) => p.id !== deleteProductTarget.id))
+      setDeleteProductTarget(null)
+    } catch (err) {
+      setProductError(translateApiError(err, 'Ürün silinemedi, tekrar deneyin.'))
+      setDeleteProductTarget(null)
+    } finally {
+      setIsDeletingProduct(false)
+    }
+  }
+
+  if (isCheckingAuth || !isAuthorized) {
+    return (
+      <div className="min-h-screen">
+        <Header />
+        <main className="mx-auto max-w-5xl px-4 py-10">
+          <Skeleton className="h-8 w-64" />
+        </main>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen">
       <Banner id="admin-overview" variant="rainbow" message="🎉 Yönetim paneli geliştirme aşamasında" height="2.5rem" />
@@ -19,18 +196,181 @@ export default function AdminPage() {
 
         <AdminOverviewSlider />
 
-        <div className="mt-8 grid gap-4 sm:grid-cols-2">
-          {upcomingSections.map((section) => (
-            <Card key={section.title} className="p-6">
+        {loadError && <p className="mt-6 text-destructive">{loadError}</p>}
+
+        {!loadError && isLoadingData && (
+          <div className="mt-8 space-y-4">
+            <Skeleton className="h-32 w-full rounded-lg" />
+            <Skeleton className="h-32 w-full rounded-lg" />
+          </div>
+        )}
+
+        {!loadError && !isLoadingData && (
+          <div className="mt-8 grid gap-6">
+            <Card className="p-6">
+              <h2 className="text-lg font-semibold text-foreground">Kategoriler</h2>
+
+              <ul className="mt-4 divide-y divide-border">
+                {categories.map((category) => (
+                  <li key={category.id} className="flex items-center gap-3 py-3">
+                    {editingCategoryId === category.id ? (
+                      <form onSubmit={handleSaveCategory} className="flex flex-1 items-center gap-3">
+                        <input
+                          type="text"
+                          required
+                          value={editingCategoryName}
+                          onChange={(e) => setEditingCategoryName(e.target.value)}
+                          className={inputClasses}
+                        />
+                        <Button type="submit" size="sm" disabled={isSavingCategory}>
+                          Kaydet
+                        </Button>
+                        <Button type="button" size="sm" variant="outline" onClick={() => setEditingCategoryId(null)}>
+                          Vazgeç
+                        </Button>
+                      </form>
+                    ) : (
+                      <>
+                        <span className="flex-1 text-sm text-foreground">{category.name}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleStartEditCategory(category)}
+                          className="text-muted-foreground hover:text-foreground"
+                          aria-label="Düzenle"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDeleteCategoryTarget(category)}
+                          className="text-muted-foreground hover:text-destructive"
+                          aria-label="Sil"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </>
+                    )}
+                  </li>
+                ))}
+              </ul>
+
+              <form onSubmit={handleAddCategory} className="mt-4 flex items-center gap-3">
+                <input
+                  type="text"
+                  required
+                  placeholder="Yeni kategori adı"
+                  value={newCategoryName}
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  className={inputClasses}
+                />
+                <Button type="submit" size="sm" disabled={isAddingCategory}>
+                  <Plus className="h-4 w-4" /> Ekle
+                </Button>
+              </form>
+
+              {categoryError && <p className="mt-3 text-sm text-destructive">{categoryError}</p>}
+            </Card>
+
+            <Card className="p-6">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-foreground">{section.title}</h2>
+                <h2 className="text-lg font-semibold text-foreground">Ürünler</h2>
+                {productFormMode === null && (
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      setProductError(null)
+                      setEditingProduct(null)
+                      setProductFormMode('create')
+                    }}
+                  >
+                    <Plus className="h-4 w-4" /> Yeni Ürün Ekle
+                  </Button>
+                )}
+              </div>
+
+              {productFormMode !== null && (
+                <div className="mt-4">
+                  <ProductForm
+                    initialValue={editingProduct ?? undefined}
+                    categories={categories}
+                    isSubmitting={isSavingProduct}
+                    onSubmit={handleProductSubmit}
+                    onCancel={() => {
+                      setProductFormMode(null)
+                      setEditingProduct(null)
+                    }}
+                  />
+                </div>
+              )}
+
+              {productError && <p className="mt-3 text-sm text-destructive">{productError}</p>}
+
+              <ul className="mt-4 divide-y divide-border">
+                {products.map((product) => (
+                  <li key={product.id} className="flex items-center gap-4 py-3">
+                    <ProductImage product={product} className="h-12 w-12 rounded-md" iconClassName="h-5 w-5" />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-foreground">{product.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {product.categoryName ?? categories.find((c) => c.id === product.categoryId)?.name} · Stok: {product.stock}
+                      </p>
+                    </div>
+                    <span className="text-sm font-medium text-foreground">{formatPrice(product.price)}</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setProductError(null)
+                        setEditingProduct(product)
+                        setProductFormMode('edit')
+                      }}
+                      className="text-muted-foreground hover:text-foreground"
+                      aria-label="Düzenle"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDeleteProductTarget(product)}
+                      className="text-muted-foreground hover:text-destructive"
+                      aria-label="Sil"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+
+            <Card className="p-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-foreground">Sipariş ve Ödeme Genel Bakışı</h2>
                 <span className="rounded-full bg-secondary px-3 py-1 text-xs font-medium text-secondary-foreground">Yakında</span>
               </div>
-              <p className="mt-2 text-sm text-muted-foreground">{section.description}</p>
+              <p className="mt-2 text-sm text-muted-foreground">Sipariş durumları ve ödeme takibi.</p>
             </Card>
-          ))}
-        </div>
+          </div>
+        )}
       </main>
+
+      <ConfirmModal
+        isOpen={deleteCategoryTarget !== null}
+        title="Kategoriyi sil"
+        message={`"${deleteCategoryTarget?.name}" kategorisini silmek istediğine emin misin?`}
+        confirmText={isDeletingCategory ? 'Siliniyor...' : 'Sil'}
+        isDestructive
+        onConfirm={handleConfirmDeleteCategory}
+        onCancel={() => setDeleteCategoryTarget(null)}
+      />
+
+      <ConfirmModal
+        isOpen={deleteProductTarget !== null}
+        title="Ürünü sil"
+        message={`"${deleteProductTarget?.name}" ürününü silmek istediğine emin misin?`}
+        confirmText={isDeletingProduct ? 'Siliniyor...' : 'Sil'}
+        isDestructive
+        onConfirm={handleConfirmDeleteProduct}
+        onCancel={() => setDeleteProductTarget(null)}
+      />
     </div>
   )
 }

@@ -6,4 +6,6 @@ public interface ICategoryService
 {
     Task<IReadOnlyList<CategoryResponseDto>> GetAllAsync(CancellationToken cancellationToken = default);
     Task<CategoryResponseDto> CreateAsync(CategoryCreateDto dto, CancellationToken cancellationToken = default);
+    Task<CategoryResponseDto> UpdateAsync(Guid id, CategoryUpdateDto dto, CancellationToken cancellationToken = default);
+    Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
 }

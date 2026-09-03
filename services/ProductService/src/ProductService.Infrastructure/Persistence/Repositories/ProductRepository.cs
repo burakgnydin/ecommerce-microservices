@@ -77,4 +77,9 @@ public class ProductRepository : IProductRepository
     {
         return await _context.Products.AnyAsync(p => p.Id == id, cancellationToken);
     }
+
+    public async Task<bool> ExistsByCategoryIdAsync(Guid categoryId, CancellationToken cancellationToken = default)
+    {
+        return await _context.Products.AnyAsync(p => p.CategoryId == categoryId, cancellationToken);
+    }
 }
