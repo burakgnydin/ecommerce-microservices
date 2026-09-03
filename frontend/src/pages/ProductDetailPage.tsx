@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import { ChevronRight, PackageCheck, PackageX, Tag } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { ApiError } from '../api/client'
@@ -7,7 +8,6 @@ import type { Product } from '../api/types'
 import { Header } from '../components/Header'
 import { ProductDetailSkeleton } from '../components/ProductDetailSkeleton'
 import { ProductImage } from '../components/ProductImage'
-import { Card } from '../components/ui/Card'
 
 function formatPrice(price: number) {
   return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(price)
@@ -54,13 +54,17 @@ export default function ProductDetailPage() {
   return (
     <div className="min-h-screen">
       <Header />
-      <main className="mx-auto max-w-3xl px-4 py-10">
-        <nav aria-label="Breadcrumb" className="mb-6 text-sm text-muted-foreground">
+      <main className="mx-auto max-w-5xl px-4 py-10">
+        <nav aria-label="Breadcrumb" className="mb-6 flex items-center text-sm text-muted-foreground">
           <button type="button" onClick={goBackToProducts} className="hover:text-foreground">
             Ürünler
           </button>
-          {product?.categoryName && <span className="mx-1.5">/</span>}
-          {product?.categoryName && <span>{product.categoryName}</span>}
+          {product?.categoryName && (
+            <>
+              <ChevronRight className="mx-1 h-4 w-4" />
+              <span>{product.categoryName}</span>
+            </>
+          )}
         </nav>
 
         {isLoading && <ProductDetailSkeleton />}
@@ -71,49 +75,56 @@ export default function ProductDetailPage() {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, ease: 'easeOut' }}
+            className="grid grid-cols-1 gap-8 md:grid-cols-2 md:gap-12"
           >
-            <Card className="overflow-hidden p-0">
-              <ProductImage product={product} className="h-72 w-full" iconClassName="h-16 w-16" />
-              <div className="p-8">
+            <div className="overflow-hidden rounded-xl border border-border">
+              <ProductImage product={product} className="aspect-square w-full" iconClassName="h-16 w-16" />
+            </div>
+
+            <div className="flex flex-col">
+              <h1 className="text-3xl font-bold tracking-tight text-foreground md:text-4xl">{product.name}</h1>
+
+              <div className="mt-2">
+                <span className="text-3xl font-bold text-foreground">{formatPrice(product.price)}</span>
+              </div>
+
+              <div className="mt-5 flex flex-wrap gap-2">
                 {product.categoryName && (
-                  <span className="mb-3 inline-block rounded-full bg-secondary px-2.5 py-0.5 text-xs font-medium text-secondary-foreground">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1 text-xs font-medium text-secondary-foreground">
+                    <Tag className="h-3.5 w-3.5" />
                     {product.categoryName}
                   </span>
                 )}
-                <h1 className="text-3xl font-bold text-foreground">{product.name}</h1>
-
-                <div className="mt-4 flex items-center gap-3">
-                  <span className="text-3xl font-bold text-foreground">
-                    {formatPrice(product.price)}
+                {product.stock > 0 ? (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1 text-xs font-medium text-secondary-foreground">
+                    <PackageCheck className="h-3.5 w-3.5" />
+                    {product.stock} adet stokta
                   </span>
-                  {product.stock > 0 ? (
-                    <span className="rounded-full bg-secondary px-2.5 py-0.5 text-xs font-medium text-secondary-foreground">
-                      {product.stock} adet stokta
-                    </span>
-                  ) : product.allowsPreOrder ? (
-                    <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
-                      Ön sipariş verilebilir
-                    </span>
-                  ) : (
-                    <span className="rounded-full bg-destructive/10 px-2.5 py-0.5 text-xs font-medium text-destructive">
-                      Stokta yok
-                    </span>
-                  )}
-                </div>
-
-                {product.description && (
-                  <p className="mt-6 leading-relaxed text-muted-foreground">{product.description}</p>
+                ) : product.allowsPreOrder ? (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+                    <PackageCheck className="h-3.5 w-3.5" />
+                    Ön sipariş verilebilir
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-destructive/10 px-3 py-1 text-xs font-medium text-destructive">
+                    <PackageX className="h-3.5 w-3.5" />
+                    Stokta yok
+                  </span>
                 )}
-
-                <button
-                  type="button"
-                  onClick={goBackToProducts}
-                  className="mt-8 inline-block text-sm font-medium text-primary hover:underline"
-                >
-                  ← Ürünlere dön
-                </button>
               </div>
-            </Card>
+
+              {product.description && (
+                <p className="mt-6 leading-relaxed text-muted-foreground">{product.description}</p>
+              )}
+
+              <button
+                type="button"
+                onClick={goBackToProducts}
+                className="mt-8 inline-block text-sm font-medium text-primary hover:underline"
+              >
+                ← Ürünlere dön
+              </button>
+            </div>
           </motion.div>
         )}
       </main>
