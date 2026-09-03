@@ -1,10 +1,11 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { ShoppingCart } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { getCategories } from '../api/categories'
 import type { Category } from '../api/types'
 import { useCart } from '../context/CartContext'
+import { getAccessToken } from '../lib/auth'
 import { InteractiveHoverButton } from './ui/InteractiveHoverButton'
 
 function CategoriesDropdown() {
@@ -55,6 +56,8 @@ function CategoriesDropdown() {
 function AuthMenu() {
   const [isOpen, setIsOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
+  const navigate = useNavigate()
+  const isLoggedIn = Boolean(getAccessToken())
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -65,6 +68,10 @@ function AuthMenu() {
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
+
+  if (isLoggedIn) {
+    return <InteractiveHoverButton text="Hesabım" onClick={() => navigate('/account')} />
+  }
 
   return (
     <div className="relative" ref={containerRef}>
