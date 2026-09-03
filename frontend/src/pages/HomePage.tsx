@@ -7,9 +7,10 @@ import { FavoriteProducts } from '../components/FavoriteProducts'
 import { Header } from '../components/Header'
 import { ProductMarquee } from '../components/ProductMarquee'
 import { ProductScreenMockup } from '../components/ProductScreenMockup'
-import { InteractiveHoverButton } from '../components/ui/InteractiveHoverButton'
 import { SearchBar } from '../components/ui/SearchBar'
-import { ShimmerText } from '../components/ui/ShimmerText'
+import { GradientText } from '../components/ui/GradientText'
+import { Highlight } from '../components/ui/HeroHighlight'
+import { ShimmerButton } from '../components/ui/ShimmerButton'
 
 const fadeUp = {
   hidden: { opacity: 0, y: 16 },
@@ -46,19 +47,15 @@ export default function HomePage() {
           initial="hidden"
           animate="visible"
           variants={fadeUp}
-          className="font-serif text-4xl leading-tight text-foreground sm:text-5xl"
+          className="text-4xl font-semibold leading-tight text-foreground sm:text-5xl"
         >
-          Alışverişin <ShimmerText className="font-serif italic">Sade</ShimmerText> Hali
+          Alışverişin <GradientText>Sade</GradientText> Hali
         </motion.h1>
-        <motion.p
-          custom={1}
-          initial="hidden"
-          animate="visible"
-          variants={fadeUp}
-          className="mt-4 max-w-md text-base text-muted-foreground"
-        >
-          Güncel ürünleri keşfet, hesabını oluştur ve alışverişe birkaç tıkla başla.
-        </motion.p>
+        <motion.div custom={1} initial="hidden" animate="visible" variants={fadeUp} className="mt-4 max-w-md">
+          <p className="text-base font-semibold leading-relaxed text-muted-foreground">
+            Güncel ürünleri keşfet, hesabını oluştur ve alışverişe <Highlight>birkaç tıkla</Highlight> başla.
+          </p>
+        </motion.div>
         <motion.div
           custom={2}
           initial="hidden"
@@ -75,7 +72,11 @@ export default function HomePage() {
         </motion.div>
         <motion.div custom={3} initial="hidden" animate="visible" variants={fadeUp} className="mt-4">
           <Link to="/products">
-            <InteractiveHoverButton text="Ürünleri Keşfet" className="w-48 h-12 text-base" />
+            <ShimmerButton className="w-48 h-12">
+              <span className="whitespace-pre-wrap text-center text-sm font-medium leading-none tracking-tight lg:text-lg">
+                Ürünleri Keşfet
+              </span>
+            </ShimmerButton>
           </Link>
         </motion.div>
 

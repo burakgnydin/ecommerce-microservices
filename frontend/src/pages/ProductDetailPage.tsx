@@ -8,6 +8,7 @@ import type { Product } from '../api/types'
 import { Header } from '../components/Header'
 import { ProductDetailSkeleton } from '../components/ProductDetailSkeleton'
 import { ProductImage } from '../components/ProductImage'
+import { ShimmerButton } from '../components/ui/ShimmerButton'
 
 function formatPrice(price: number) {
   return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(price)
@@ -117,13 +118,11 @@ export default function ProductDetailPage() {
                 <p className="mt-6 leading-relaxed text-muted-foreground">{product.description}</p>
               )}
 
-              <button
-                type="button"
-                onClick={goBackToProducts}
-                className="mt-8 inline-block text-sm font-medium text-primary hover:underline"
-              >
-                ← Ürünlere dön
-              </button>
+              <ShimmerButton type="button" onClick={goBackToProducts} className="mt-8 px-4 py-1.5">
+                <span className="whitespace-pre-wrap text-center text-xs font-medium leading-none tracking-tight">
+                  ← Ürünlere dön
+                </span>
+              </ShimmerButton>
             </div>
           </motion.div>
         )}

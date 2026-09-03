@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import type { Product } from '../api/types'
 import { ContainerScroll } from './ui/ContainerScroll'
 import { ProductImage } from './ProductImage'
+import { ShimmerButton } from './ui/ShimmerButton'
 import { ShimmerText } from './ui/ShimmerText'
 
 interface ProductScreenMockupProps {
@@ -34,8 +35,12 @@ export function ProductScreenMockup({ products }: ProductScreenMockupProps) {
             Öne çıkan <ShimmerText>ürünleri</ShimmerText> keşfet
           </h2>
           <p className="mt-2 text-muted-foreground">Kaydırdıkça vitrindeki ürünlerimizi yakından incele.</p>
-          <Link to="/products" className="mt-3 inline-block text-sm font-medium text-primary hover:underline">
-            Tümünü incele →
+          <Link to="/products" className="mt-3 inline-block">
+            <ShimmerButton className="px-4 py-1.5">
+              <span className="whitespace-pre-wrap text-center text-xs font-medium leading-none tracking-tight">
+                Tümünü incele →
+              </span>
+            </ShimmerButton>
           </Link>
         </>
       }

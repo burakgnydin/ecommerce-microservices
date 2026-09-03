@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { Star } from 'lucide-react'
 import type { Product } from '../api/types'
 import { ProductImage } from './ProductImage'
+import { ShimmerButton } from './ui/ShimmerButton'
 
 interface FavoriteProductsProps {
   products: Product[]
@@ -100,7 +101,11 @@ export function FavoriteProducts({ products }: FavoriteProductsProps) {
                   </div>
                   <div className="mt-4 flex items-center justify-between">
                     <span className="text-lg font-bold text-card-foreground">{formatPrice(product.price)}</span>
-                    <span className="text-sm font-medium text-primary">İncele →</span>
+                    <ShimmerButton className="px-4 py-1.5">
+                      <span className="whitespace-pre-wrap text-center text-xs font-medium leading-none tracking-tight">
+                        İncele →
+                      </span>
+                    </ShimmerButton>
                   </div>
                 </div>
               </Link>
