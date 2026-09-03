@@ -12,8 +12,7 @@ public class User
     public User(string name, string email, string passwordHash, Role role = Role.Customer)
     {
         ValidateNameAndEmail(name, email);
-        if (string.IsNullOrWhiteSpace(passwordHash))
-            throw new ArgumentException("Password hash is required.", nameof(passwordHash));
+        ValidatePasswordHash(passwordHash);
 
         Id = Guid.NewGuid();
         Name = name;
@@ -29,6 +28,19 @@ public class User
 
         Name = name;
         Email = email;
+    }
+
+    public void ChangePassword(string newPasswordHash)
+    {
+        ValidatePasswordHash(newPasswordHash);
+
+        PasswordHash = newPasswordHash;
+    }
+
+    private static void ValidatePasswordHash(string passwordHash)
+    {
+        if (string.IsNullOrWhiteSpace(passwordHash))
+            throw new ArgumentException("Password hash is required.", nameof(passwordHash));
     }
 
     private static void ValidateNameAndEmail(string name, string email)

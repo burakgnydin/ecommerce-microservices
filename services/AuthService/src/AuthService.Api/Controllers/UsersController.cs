@@ -53,4 +53,20 @@ public class UsersController : ControllerBase
         var result = await _userService.UpdateAsync(userId, dto, cancellationToken);
         return Ok(result);
     }
+
+    /// <summary>
+    /// Changes the password of the currently authenticated user.
+    /// </summary>
+    /// <param name="dto">The current and new password.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    [HttpPut("me/password")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ChangePassword(ChangePasswordRequestDto dto, CancellationToken cancellationToken)
+    {
+        var userId = Guid.Parse(User.FindFirst(JwtRegisteredClaimNames.Sub)!.Value);
+        await _userService.ChangePasswordAsync(userId, dto, cancellationToken);
+        return NoContent();
+    }
 }

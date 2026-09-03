@@ -28,6 +28,11 @@ export interface UserUpdateRequest {
   email: string
 }
 
+export interface ChangePasswordRequest {
+  currentPassword: string
+  newPassword: string
+}
+
 export interface Category {
   id: string
   name: string

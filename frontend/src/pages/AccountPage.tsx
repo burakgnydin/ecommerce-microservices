@@ -3,11 +3,14 @@ import { useNavigate } from 'react-router-dom'
 import { logout } from '../api/auth'
 import { ApiError, translateApiError } from '../api/client'
 import type { UserResponse } from '../api/types'
-import { getMe, updateMe } from '../api/users'
+import { changePassword, getMe, updateMe } from '../api/users'
 import { Header } from '../components/Header'
 import { Button } from '../components/ui/Button'
 import { Skeleton } from '../components/ui/Skeleton'
 import { clearTokens, getAccessToken, getRefreshToken } from '../lib/auth'
+
+const inputClasses =
+  'h-11 w-full rounded-md border border-border bg-card px-3 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring'
 
 export default function AccountPage() {
   const navigate = useNavigate()
@@ -19,6 +22,12 @@ export default function AccountPage() {
   const [formError, setFormError] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmNewPassword, setConfirmNewPassword] = useState('')
+  const [passwordError, setPasswordError] = useState<string | null>(null)
+  const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null)
+  const [isChangingPassword, setIsChangingPassword] = useState(false)
 
   useEffect(() => {
     if (!getAccessToken()) {
@@ -51,6 +60,30 @@ export default function AccountPage() {
       setFormError(translateApiError(err, 'Bilgiler güncellenemedi, tekrar deneyin.'))
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  async function handlePasswordSubmit(event: FormEvent) {
+    event.preventDefault()
+    setPasswordError(null)
+    setPasswordSuccess(null)
+
+    if (newPassword !== confirmNewPassword) {
+      setPasswordError('Yeni şifreler eşleşmiyor.')
+      return
+    }
+
+    setIsChangingPassword(true)
+    try {
+      await changePassword({ currentPassword, newPassword })
+      setCurrentPassword('')
+      setNewPassword('')
+      setConfirmNewPassword('')
+      setPasswordSuccess('Şifren güncellendi.')
+    } catch (err) {
+      setPasswordError(translateApiError(err, 'Şifre güncellenemedi, tekrar deneyin.'))
+    } finally {
+      setIsChangingPassword(false)
     }
   }
 
@@ -93,7 +126,7 @@ export default function AccountPage() {
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="h-11 w-full rounded-md border border-border bg-card px-3 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className={inputClasses}
                 />
               </div>
 
@@ -107,7 +140,7 @@ export default function AccountPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="h-11 w-full rounded-md border border-border bg-card px-3 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className={inputClasses}
                 />
               </div>
 
@@ -121,6 +154,62 @@ export default function AccountPage() {
 
               <Button type="submit" disabled={isSubmitting} className="h-11 w-full">
                 {isSubmitting ? 'Kaydediliyor...' : 'Bilgileri Güncelle'}
+              </Button>
+            </form>
+
+            <form onSubmit={handlePasswordSubmit} className="mt-8 space-y-4 border-t border-border pt-8">
+              <h2 className="text-lg font-semibold text-foreground">Şifre değiştir</h2>
+
+              <div>
+                <label htmlFor="currentPassword" className="mb-1 block text-sm font-medium text-muted-foreground">
+                  Mevcut şifre
+                </label>
+                <input
+                  id="currentPassword"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  className={inputClasses}
+                />
+              </div>
+
+              <div>
+                <label htmlFor="newPassword" className="mb-1 block text-sm font-medium text-muted-foreground">
+                  Yeni şifre
+                </label>
+                <input
+                  id="newPassword"
+                  type="password"
+                  autoComplete="new-password"
+                  required
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className={inputClasses}
+                />
+              </div>
+
+              <div>
+                <label htmlFor="confirmNewPassword" className="mb-1 block text-sm font-medium text-muted-foreground">
+                  Yeni şifre (tekrar)
+                </label>
+                <input
+                  id="confirmNewPassword"
+                  type="password"
+                  autoComplete="new-password"
+                  required
+                  value={confirmNewPassword}
+                  onChange={(e) => setConfirmNewPassword(e.target.value)}
+                  className={inputClasses}
+                />
+              </div>
+
+              {passwordError && <p className="text-sm text-destructive">{passwordError}</p>}
+              {passwordSuccess && <p className="text-sm text-green-600">{passwordSuccess}</p>}
+
+              <Button type="submit" disabled={isChangingPassword} className="h-11 w-full">
+                {isChangingPassword ? 'Güncelleniyor...' : 'Şifreyi Güncelle'}
               </Button>
             </form>
 
