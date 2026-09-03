@@ -26,6 +26,9 @@ public class CartServiceTests
             .ReturnsAsync(new ProductCatalogItem(productId, "Test Product", 9.99m, stock));
     }
 
+    private static CheckoutRequestDto CreateCheckoutRequest()
+        => new("Ev", "İstanbul", "Kadıköy", "Örnek Mah. Örnek Sok. No:1");
+
     [Fact]
     public async Task GetOrCreateAsync_ReturnsExistingCart_WhenCartAlreadyExists()
     {
@@ -210,11 +213,11 @@ public class CartServiceTests
         var cart = new Cart(userId);
         cart.AddItem(productId, 2);
         _cartRepository.Setup(r => r.GetByUserIdAsync(userId, It.IsAny<CancellationToken>())).ReturnsAsync(cart);
-        var orderResponse = new OrderResponseDto(Guid.NewGuid(), userId, "Pending", 19.98m, DateTime.UtcNow, []);
+        var orderResponse = new OrderResponseDto(Guid.NewGuid(), userId, "Pending", 19.98m, DateTime.UtcNow, [], "Ev", "İstanbul", "Kadıköy", "Örnek Mah. Örnek Sok. No:1");
         _orderService.Setup(s => s.CreateAsync(userId, It.IsAny<OrderCreateDto>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(orderResponse);
 
-        var result = await _sut.CheckoutAsync(userId);
+        var result = await _sut.CheckoutAsync(userId, CreateCheckoutRequest());
 
         Assert.Equal(orderResponse.Id, result.Id);
         Assert.Empty(cart.Items);
@@ -232,7 +235,7 @@ public class CartServiceTests
         var cart = new Cart(userId);
         _cartRepository.Setup(r => r.GetByUserIdAsync(userId, It.IsAny<CancellationToken>())).ReturnsAsync(cart);
 
-        await Assert.ThrowsAsync<EmptyCartException>(() => _sut.CheckoutAsync(userId));
+        await Assert.ThrowsAsync<EmptyCartException>(() => _sut.CheckoutAsync(userId, CreateCheckoutRequest()));
         _orderService.Verify(s => s.CreateAsync(It.IsAny<Guid>(), It.IsAny<OrderCreateDto>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -242,6 +245,6 @@ public class CartServiceTests
         var userId = Guid.NewGuid();
         _cartRepository.Setup(r => r.GetByUserIdAsync(userId, It.IsAny<CancellationToken>())).ReturnsAsync((Cart?)null);
 
-        await Assert.ThrowsAsync<NotFoundException>(() => _sut.CheckoutAsync(userId));
+        await Assert.ThrowsAsync<NotFoundException>(() => _sut.CheckoutAsync(userId, CreateCheckoutRequest()));
     }
 }

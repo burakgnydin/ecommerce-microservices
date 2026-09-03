@@ -110,4 +110,37 @@ public class PaymentsApiTests : IAsyncLifetime
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
+
+    [Fact]
+    public async Task GetAll_ReturnsOnlyTheAuthenticatedUsersOwnPayments()
+    {
+        var userId = Guid.NewGuid();
+        var otherUserId = Guid.NewGuid();
+        var ownOrderId = Guid.NewGuid();
+        var otherOrderId = Guid.NewGuid();
+        _factory.OrderServiceHandler.SetOrder(ownOrderId, userId, "Pending", 19.98m);
+        _factory.OrderServiceHandler.SetOrder(otherOrderId, otherUserId, "Pending", 9.99m);
+
+        Authenticate(userId);
+        await _client.PostAsJsonAsync("/api/payments", CreateRequest(ownOrderId));
+
+        Authenticate(otherUserId);
+        await _client.PostAsJsonAsync("/api/payments", CreateRequest(otherOrderId));
+
+        Authenticate(userId);
+        var response = await _client.GetAsync("/api/payments");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var payments = await response.Content.ReadFromJsonAsync<List<PaymentResponseDto>>();
+        var payment = Assert.Single(payments!);
+        Assert.Equal(ownOrderId, payment.OrderId);
+    }
+
+    [Fact]
+    public async Task GetAll_ReturnsUnauthorized_WhenNoTokenIsProvided()
+    {
+        var response = await _client.GetAsync("/api/payments");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
 }

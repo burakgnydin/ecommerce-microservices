@@ -3,9 +3,10 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getCategories } from '../api/categories'
 import { ApiError } from '../api/client'
+import { getProducts } from '../api/products'
 import type { Category } from '../api/types'
 import { Header } from '../components/Header'
-import { Card } from '../components/ui/Card'
+import { ArticleCard } from '../components/ui/ArticleCard'
 import { SearchBar } from '../components/ui/SearchBar'
 
 const fadeUp = {
@@ -17,8 +18,14 @@ const fadeUp = {
   }),
 }
 
+interface CategoryPreview {
+  imageUrl: string | null
+  count: number
+}
+
 export default function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([])
+  const [previews, setPreviews] = useState<Record<string, CategoryPreview>>({})
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -41,6 +48,23 @@ export default function CategoriesPage() {
       .finally(() => {
         if (!cancelled) setIsLoading(false)
       })
+
+    getProducts(1, 100)
+      .then((data) => {
+        if (cancelled) return
+        const byCategory: Record<string, CategoryPreview> = {}
+        for (const product of data.items) {
+          const existing = byCategory[product.categoryId]
+          if (existing) {
+            existing.count += 1
+            if (!existing.imageUrl && product.imageUrl) existing.imageUrl = product.imageUrl
+          } else {
+            byCategory[product.categoryId] = { imageUrl: product.imageUrl, count: 1 }
+          }
+        }
+        setPreviews(byCategory)
+      })
+      .catch(() => {})
 
     return () => {
       cancelled = true
@@ -70,9 +94,11 @@ export default function CategoriesPage() {
             {filteredCategories.map((category, i) => (
               <motion.div key={category.id} custom={i} initial="hidden" animate="visible" variants={fadeUp}>
                 <Link to={`/products?categoryId=${category.id}&categoryName=${encodeURIComponent(category.name)}`}>
-                  <Card className="p-6 transition-colors hover:border-primary">
-                    <h2 className="text-lg font-semibold text-foreground">{category.name}</h2>
-                  </Card>
+                  <ArticleCard
+                    title={category.name}
+                    count={previews[category.id]?.count ?? 0}
+                    imageUrl={previews[category.id]?.imageUrl ?? null}
+                  />
                 </Link>
               </motion.div>
             ))}

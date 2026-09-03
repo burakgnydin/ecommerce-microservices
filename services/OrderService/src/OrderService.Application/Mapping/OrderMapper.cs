@@ -13,7 +13,11 @@ public static class OrderMapper
             order.Status.ToString(),
             order.TotalAmount,
             order.CreatedAt,
-            order.Items.Select(i => i.ToDto()).ToList());
+            order.Items.Select(i => i.ToDto()).ToList(),
+            order.ShippingTitle,
+            order.ShippingCity,
+            order.ShippingDistrict,
+            order.ShippingFullAddress);
     }
 
     public static OrderItemResponseDto ToDto(this OrderItem item)

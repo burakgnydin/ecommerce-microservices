@@ -16,7 +16,8 @@ const KNOWN_ERROR_MESSAGES: Record<string, string> = {
 export function translateApiError(err: unknown, fallback: string): string {
   if (err instanceof ApiError) {
     if (KNOWN_ERROR_MESSAGES[err.message]) return KNOWN_ERROR_MESSAGES[err.message]
-    if (err.message.includes('already exists')) return 'Bu e-posta adresi zaten kayıtlı.'
+    if (err.message.includes('A user with email') && err.message.includes('already exists'))
+      return 'Bu e-posta adresi zaten kayıtlı.'
     return err.message
   }
   return fallback

@@ -34,7 +34,7 @@ public class OrderService : IOrderService
             items.Add(new OrderItem(product.Id, product.Name, product.Price, itemRequest.Quantity));
         }
 
-        var order = new Order(userId, items);
+        var order = new Order(userId, items, dto.ShippingTitle, dto.ShippingCity, dto.ShippingDistrict, dto.ShippingFullAddress);
         await _orderRepository.CreateAsync(order, cancellationToken);
 
         return order.ToDto();
@@ -49,6 +49,12 @@ public class OrderService : IOrderService
     public async Task<IReadOnlyList<OrderResponseDto>> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         var orders = await _orderRepository.GetByUserIdAsync(userId, cancellationToken);
+        return orders.Select(o => o.ToDto()).ToList();
+    }
+
+    public async Task<IReadOnlyList<OrderResponseDto>> GetAllAsync(CancellationToken cancellationToken = default)
+    {
+        var orders = await _orderRepository.GetAllAsync(cancellationToken);
         return orders.Select(o => o.ToDto()).ToList();
     }
 

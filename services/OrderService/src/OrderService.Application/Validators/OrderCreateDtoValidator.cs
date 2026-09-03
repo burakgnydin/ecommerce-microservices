@@ -12,5 +12,21 @@ public class OrderCreateDtoValidator : AbstractValidator<OrderCreateDto>
 
         RuleForEach(x => x.Items)
             .SetValidator(new OrderItemCreateDtoValidator());
+
+        RuleFor(x => x.ShippingTitle)
+            .NotEmpty()
+            .MaximumLength(100);
+
+        RuleFor(x => x.ShippingCity)
+            .NotEmpty()
+            .MaximumLength(100);
+
+        RuleFor(x => x.ShippingDistrict)
+            .NotEmpty()
+            .MaximumLength(100);
+
+        RuleFor(x => x.ShippingFullAddress)
+            .NotEmpty()
+            .MaximumLength(500);
     }
 }

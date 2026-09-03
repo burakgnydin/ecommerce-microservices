@@ -10,6 +10,11 @@ public interface IOrderService
 
     Task<IReadOnlyList<OrderResponseDto>> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Returns every order across all users, most recent first. Restricted to admins.
+    /// </summary>
+    Task<IReadOnlyList<OrderResponseDto>> GetAllAsync(CancellationToken cancellationToken = default);
+
     Task<OrderResponseDto> CancelAsync(Guid orderId, Guid userId, CancellationToken cancellationToken = default);
 
     /// <summary>

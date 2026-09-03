@@ -12,5 +12,5 @@ public interface ICartService
 
     Task<CartResponseDto> RemoveItemAsync(Guid userId, Guid productId, CancellationToken cancellationToken = default);
 
-    Task<OrderResponseDto> CheckoutAsync(Guid userId, CancellationToken cancellationToken = default);
+    Task<OrderResponseDto> CheckoutAsync(Guid userId, CheckoutRequestDto dto, CancellationToken cancellationToken = default);
 }

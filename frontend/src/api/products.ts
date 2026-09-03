@@ -1,5 +1,6 @@
 import { apiFetch } from './client'
-import type { PagedResult, Product } from './types'
+import { authHeader } from '../lib/auth'
+import type { PagedResult, Product, ProductCreateRequest, ProductUpdateRequest } from './types'
 
 export function getProducts(pageNumber = 1, pageSize = 20, categoryId?: string, search?: string) {
   const params = new URLSearchParams({ pageNumber: String(pageNumber), pageSize: String(pageSize) })
@@ -11,4 +12,27 @@ export function getProducts(pageNumber = 1, pageSize = 20, categoryId?: string, 
 
 export function getProductById(id: string) {
   return apiFetch<Product>(`/products/api/products/${id}`)
+}
+
+export function createProduct(dto: ProductCreateRequest) {
+  return apiFetch<Product>('/products/api/products', {
+    method: 'POST',
+    headers: authHeader(),
+    body: JSON.stringify(dto),
+  })
+}
+
+export function updateProduct(id: string, dto: ProductUpdateRequest) {
+  return apiFetch<Product>(`/products/api/products/${id}`, {
+    method: 'PUT',
+    headers: authHeader(),
+    body: JSON.stringify(dto),
+  })
+}
+
+export function deleteProduct(id: string) {
+  return apiFetch<void>(`/products/api/products/${id}`, {
+    method: 'DELETE',
+    headers: authHeader(),
+  })
 }

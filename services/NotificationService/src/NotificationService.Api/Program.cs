@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using FluentValidation;
 using NotificationService.Api.ExceptionHandling;
 using NotificationService.Application.DependencyInjection;
@@ -20,7 +21,8 @@ builder.Services.AddApplicationServices();
 builder.Services.AddValidatorsFromAssemblyContaining<NotificationRequestDtoValidator>();
 builder.Services.AddFluentValidationAutoValidation();
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
 builder.Services.AddOpenApi();
 

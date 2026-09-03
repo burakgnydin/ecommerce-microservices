@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using PaymentService.Application.Interfaces;
 using PaymentService.Domain.Entities;
 using PaymentService.Infrastructure.Persistence;
@@ -17,5 +18,20 @@ public class PaymentRepository : IPaymentRepository
     {
         await _context.Payments.AddAsync(payment, cancellationToken);
         await _context.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<Payment>> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        return await _context.Payments
+            .Where(p => p.UserId == userId)
+            .OrderByDescending(p => p.CreatedAt)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<Payment>> GetAllAsync(CancellationToken cancellationToken = default)
+    {
+        return await _context.Payments
+            .OrderByDescending(p => p.CreatedAt)
+            .ToListAsync(cancellationToken);
     }
 }

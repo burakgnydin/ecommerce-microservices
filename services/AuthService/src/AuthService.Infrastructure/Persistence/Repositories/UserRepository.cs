@@ -28,9 +28,23 @@ public class UserRepository : IUserRepository
         return await _context.Users.SingleOrDefaultAsync(u => u.Id == id, cancellationToken);
     }
 
+    public async Task<IReadOnlyList<User>> GetAllAsync(CancellationToken cancellationToken = default)
+    {
+        return await _context.Users
+            .AsNoTracking()
+            .OrderBy(u => u.Name)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task CreateAsync(User user, CancellationToken cancellationToken = default)
     {
         await _context.Users.AddAsync(user, cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task UpdateAsync(User user, CancellationToken cancellationToken = default)
+    {
+        _context.Users.Update(user);
         await _context.SaveChangesAsync(cancellationToken);
     }
 }

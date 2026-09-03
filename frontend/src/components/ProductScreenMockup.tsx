@@ -1,8 +1,10 @@
-import { motion } from 'framer-motion'
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import type { Product } from '../api/types'
+import { ContainerScroll } from './ui/ContainerScroll'
 import { ProductImage } from './ProductImage'
+import { ShimmerButton } from './ui/ShimmerButton'
+import { ShimmerText } from './ui/ShimmerText'
 
 interface ProductScreenMockupProps {
   products: Product[]
@@ -18,42 +20,54 @@ function pickRandom<T>(items: T[], count: number): T[] {
 }
 
 export function ProductScreenMockup({ products }: ProductScreenMockupProps) {
-  const preview = useMemo(() => pickRandom(products, 4), [products])
+  const preview = useMemo(() => pickRandom(products, 9), [products])
+  const columns = useMemo(
+    () => [preview.slice(0, 3), preview.slice(3, 6), preview.slice(6, 9)].filter((column) => column.length > 0),
+    [preview],
+  )
   if (preview.length === 0) return null
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 30 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.7, delay: 0.35, ease: [0.22, 1, 0.36, 1] }}
-      className="relative mx-auto mt-14 w-full max-w-2xl"
+    <ContainerScroll
+      titleComponent={
+        <>
+          <h2 className="text-2xl font-semibold text-foreground sm:text-3xl">
+            Öne çıkan <ShimmerText>ürünleri</ShimmerText> keşfet
+          </h2>
+          <p className="mt-2 text-muted-foreground">Kaydırdıkça vitrindeki ürünlerimizi yakından incele.</p>
+          <Link to="/products" className="mt-3 inline-block">
+            <ShimmerButton className="px-4 py-1.5">
+              <span className="whitespace-pre-wrap text-center text-xs font-medium leading-none tracking-tight">
+                Tümünü incele →
+              </span>
+            </ShimmerButton>
+          </Link>
+        </>
+      }
     >
-      <span className="absolute -top-4 right-4 z-10 rounded-full bg-primary px-3 py-1 text-xs font-medium text-primary-foreground shadow-md">
-        Hemen incele →
-      </span>
-      <div className="rounded-2xl bg-foreground p-3 shadow-xl">
-        <div className="mb-2.5 flex items-center gap-1.5 px-1">
-          <span className="h-2.5 w-2.5 rounded-full bg-white/25" />
-          <span className="h-2.5 w-2.5 rounded-full bg-white/25" />
-          <span className="h-2.5 w-2.5 rounded-full bg-white/25" />
-        </div>
-        <div className="grid grid-cols-2 gap-3 rounded-lg bg-card p-4">
-          {preview.map((product) => (
-            <Link
-              key={product.id}
-              to={`/products/${product.id}`}
-              className="overflow-hidden rounded-lg border border-border transition-colors hover:border-primary"
+      <div className="grid h-full grid-cols-2 gap-3 sm:grid-cols-3">
+        {columns.map((column, columnIndex) => (
+          <div key={columnIndex} className="h-full overflow-hidden">
+            <div
+              className="flex flex-col gap-3 animate-marquee-vertical"
+              style={{ animationDuration: `${column.length * 6}s`, animationDelay: `${columnIndex * -2}s` }}
             >
-              <ProductImage product={product} className="h-20 w-full" iconClassName="h-6 w-6" />
-              <div className="p-2.5">
-                <p className="truncate text-xs font-medium text-card-foreground">{product.name}</p>
-              </div>
-            </Link>
-          ))}
-        </div>
+              {[...column, ...column].map((product, i) => (
+                <Link
+                  key={`${product.id}-${i}`}
+                  to={`/products/${product.id}`}
+                  className="flex shrink-0 flex-col overflow-hidden rounded-lg border border-border transition-colors hover:border-primary"
+                >
+                  <ProductImage product={product} className="h-24 w-full sm:h-28" iconClassName="h-5 w-5" />
+                  <div className="p-2">
+                    <p className="truncate text-xs font-medium text-card-foreground">{product.name}</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        ))}
       </div>
-      <div className="mx-auto h-6 w-16 rounded-b-md bg-foreground/90" />
-      <div className="mx-auto h-2 w-40 rounded-full bg-foreground/70" />
-    </motion.div>
+    </ContainerScroll>
   )
 }

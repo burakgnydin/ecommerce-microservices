@@ -11,7 +11,8 @@ public class User
 
     public User(string name, string email, string passwordHash, Role role = Role.Customer)
     {
-        Validate(name, email, passwordHash);
+        ValidateNameAndEmail(name, email);
+        ValidatePasswordHash(passwordHash);
 
         Id = Guid.NewGuid();
         Name = name;
@@ -21,7 +22,28 @@ public class User
         CreatedAt = DateTime.UtcNow;
     }
 
-    private static void Validate(string name, string email, string passwordHash)
+    public void UpdateProfile(string name, string email)
+    {
+        ValidateNameAndEmail(name, email);
+
+        Name = name;
+        Email = email;
+    }
+
+    public void ChangePassword(string newPasswordHash)
+    {
+        ValidatePasswordHash(newPasswordHash);
+
+        PasswordHash = newPasswordHash;
+    }
+
+    private static void ValidatePasswordHash(string passwordHash)
+    {
+        if (string.IsNullOrWhiteSpace(passwordHash))
+            throw new ArgumentException("Password hash is required.", nameof(passwordHash));
+    }
+
+    private static void ValidateNameAndEmail(string name, string email)
     {
         if (string.IsNullOrWhiteSpace(name))
             throw new ArgumentException("User name is required.", nameof(name));
@@ -33,7 +55,5 @@ public class User
             throw new ArgumentException("Email cannot exceed 320 characters.", nameof(email));
         if (!email.Contains('@'))
             throw new ArgumentException("Email must be a valid email address.", nameof(email));
-        if (string.IsNullOrWhiteSpace(passwordHash))
-            throw new ArgumentException("Password hash is required.", nameof(passwordHash));
     }
 }

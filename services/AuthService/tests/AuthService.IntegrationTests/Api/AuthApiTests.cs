@@ -1,6 +1,8 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using AuthService.Application.DTOs;
 using AuthService.IntegrationTests.Fixtures;
 
@@ -9,6 +11,11 @@ namespace AuthService.IntegrationTests.Api;
 [Collection("Integration")]
 public class AuthApiTests : IAsyncLifetime
 {
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
+    {
+        Converters = { new JsonStringEnumConverter() }
+    };
+
     private readonly DatabaseFixture _fixture;
     private AuthServiceApiFactory _factory = null!;
     private HttpClient _client = null!;
@@ -97,7 +104,7 @@ public class AuthApiTests : IAsyncLifetime
         var response = await _client.GetAsync("/api/users/me");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var profile = await response.Content.ReadFromJsonAsync<UserResponseDto>();
+        var profile = await response.Content.ReadFromJsonAsync<UserResponseDto>(JsonOptions);
         Assert.NotNull(profile);
         Assert.Equal(email, profile!.Email);
     }

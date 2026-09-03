@@ -34,6 +34,9 @@ public class OrdersApiTests : IAsyncLifetime
     private void Authenticate(Guid userId)
         => _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _factory.CreateAccessToken(userId));
 
+    private static OrderCreateDto CreateOrderDto(params OrderItemCreateDto[] items)
+        => new(items, "Ev", "İstanbul", "Kadıköy", "Örnek Mah. Örnek Sok. No:1");
+
     [Fact]
     public async Task CreateThenGet_ReturnsCreatedOrder_WhenProductExistsWithSufficientStock()
     {
@@ -41,7 +44,7 @@ public class OrdersApiTests : IAsyncLifetime
         var productId = Guid.NewGuid();
         _factory.ProductServiceHandler.SetProduct(productId, "Widget", 9.99m, 10);
         Authenticate(userId);
-        var createDto = new OrderCreateDto([new OrderItemCreateDto(productId, 2)]);
+        var createDto = CreateOrderDto(new OrderItemCreateDto(productId, 2));
 
         var createResponse = await _client.PostAsJsonAsync("/api/orders", createDto);
         Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);
@@ -60,7 +63,7 @@ public class OrdersApiTests : IAsyncLifetime
     [Fact]
     public async Task Create_ReturnsUnauthorized_WhenNoTokenIsProvided()
     {
-        var dto = new OrderCreateDto([new OrderItemCreateDto(Guid.NewGuid(), 1)]);
+        var dto = CreateOrderDto(new OrderItemCreateDto(Guid.NewGuid(), 1));
 
         var response = await _client.PostAsJsonAsync("/api/orders", dto);
 
@@ -71,7 +74,7 @@ public class OrdersApiTests : IAsyncLifetime
     public async Task Create_ReturnsNotFound_WhenProductDoesNotExistInProductService()
     {
         Authenticate(Guid.NewGuid());
-        var dto = new OrderCreateDto([new OrderItemCreateDto(Guid.NewGuid(), 1)]);
+        var dto = CreateOrderDto(new OrderItemCreateDto(Guid.NewGuid(), 1));
 
         var response = await _client.PostAsJsonAsync("/api/orders", dto);
 
@@ -84,7 +87,7 @@ public class OrdersApiTests : IAsyncLifetime
         var productId = Guid.NewGuid();
         _factory.ProductServiceHandler.SetProduct(productId, "Widget", 9.99m, 1);
         Authenticate(Guid.NewGuid());
-        var dto = new OrderCreateDto([new OrderItemCreateDto(productId, 5)]);
+        var dto = CreateOrderDto(new OrderItemCreateDto(productId, 5));
 
         var response = await _client.PostAsJsonAsync("/api/orders", dto);
 
@@ -98,7 +101,7 @@ public class OrdersApiTests : IAsyncLifetime
         var productId = Guid.NewGuid();
         _factory.ProductServiceHandler.SetProduct(productId, "Widget", 9.99m, 10);
         Authenticate(ownerId);
-        var createResponse = await _client.PostAsJsonAsync("/api/orders", new OrderCreateDto([new OrderItemCreateDto(productId, 1)]));
+        var createResponse = await _client.PostAsJsonAsync("/api/orders", CreateOrderDto(new OrderItemCreateDto(productId, 1)));
         var created = await createResponse.Content.ReadFromJsonAsync<OrderResponseDto>();
 
         Authenticate(Guid.NewGuid());
@@ -114,7 +117,7 @@ public class OrdersApiTests : IAsyncLifetime
         var productId = Guid.NewGuid();
         _factory.ProductServiceHandler.SetProduct(productId, "Widget", 9.99m, 10);
         Authenticate(userId);
-        var createResponse = await _client.PostAsJsonAsync("/api/orders", new OrderCreateDto([new OrderItemCreateDto(productId, 1)]));
+        var createResponse = await _client.PostAsJsonAsync("/api/orders", CreateOrderDto(new OrderItemCreateDto(productId, 1)));
         var created = await createResponse.Content.ReadFromJsonAsync<OrderResponseDto>();
 
         var cancelResponse = await _client.PatchAsJsonAsync($"/api/orders/{created!.Id}", new OrderStatusUpdateDto("Cancelled"));
@@ -131,7 +134,7 @@ public class OrdersApiTests : IAsyncLifetime
         var productId = Guid.NewGuid();
         _factory.ProductServiceHandler.SetProduct(productId, "Widget", 9.99m, 10);
         Authenticate(userId);
-        var createResponse = await _client.PostAsJsonAsync("/api/orders", new OrderCreateDto([new OrderItemCreateDto(productId, 1)]));
+        var createResponse = await _client.PostAsJsonAsync("/api/orders", CreateOrderDto(new OrderItemCreateDto(productId, 1)));
         var created = await createResponse.Content.ReadFromJsonAsync<OrderResponseDto>();
 
         var response = await _client.PatchAsJsonAsync($"/api/orders/{created!.Id}", new OrderStatusUpdateDto("Paid"));
@@ -146,7 +149,7 @@ public class OrdersApiTests : IAsyncLifetime
         var productId = Guid.NewGuid();
         _factory.ProductServiceHandler.SetProduct(productId, "Widget", 9.99m, 10);
         Authenticate(userId);
-        var createResponse = await _client.PostAsJsonAsync("/api/orders", new OrderCreateDto([new OrderItemCreateDto(productId, 1)]));
+        var createResponse = await _client.PostAsJsonAsync("/api/orders", CreateOrderDto(new OrderItemCreateDto(productId, 1)));
         var created = await createResponse.Content.ReadFromJsonAsync<OrderResponseDto>();
 
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _factory.CreateServiceToken());
@@ -164,7 +167,7 @@ public class OrdersApiTests : IAsyncLifetime
         var productId = Guid.NewGuid();
         _factory.ProductServiceHandler.SetProduct(productId, "Widget", 9.99m, 10);
         Authenticate(userId);
-        var createResponse = await _client.PostAsJsonAsync("/api/orders", new OrderCreateDto([new OrderItemCreateDto(productId, 1)]));
+        var createResponse = await _client.PostAsJsonAsync("/api/orders", CreateOrderDto(new OrderItemCreateDto(productId, 1)));
         var created = await createResponse.Content.ReadFromJsonAsync<OrderResponseDto>();
 
         var response = await _client.PostAsync($"/api/orders/{created!.Id}/mark-paid", null);

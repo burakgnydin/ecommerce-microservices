@@ -48,6 +48,7 @@ public static class InfrastructureServiceCollectionExtensions
 
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+        services.AddScoped<IAddressRepository, AddressRepository>();
         services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
         services.AddScoped<ITokenService, JwtTokenService>();
 

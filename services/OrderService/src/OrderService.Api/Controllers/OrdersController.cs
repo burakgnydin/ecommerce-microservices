@@ -49,6 +49,19 @@ public class OrdersController : ControllerBase
     }
 
     /// <summary>
+    /// Returns every order across all users, most recent first. Restricted to admins.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    [HttpGet("admin/all")]
+    [Authorize(Roles = "Admin")]
+    [ProducesResponseType<IReadOnlyList<OrderResponseDto>>(StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyList<OrderResponseDto>>> GetAllForAdmin(CancellationToken cancellationToken)
+    {
+        var result = await _orderService.GetAllAsync(cancellationToken);
+        return Ok(result);
+    }
+
+    /// <summary>
     /// Creates a new order for the authenticated user.
     /// </summary>
     /// <param name="dto">Order data.</param>

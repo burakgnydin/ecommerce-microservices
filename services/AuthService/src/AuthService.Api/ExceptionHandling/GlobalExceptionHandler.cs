@@ -23,6 +23,7 @@ public class GlobalExceptionHandler : IExceptionHandler
         {
             DuplicateEmailException => (StatusCodes.Status409Conflict, "Duplicate email", exception.Message),
             InvalidCredentialsException => (StatusCodes.Status401Unauthorized, "Invalid credentials", exception.Message),
+            InvalidCurrentPasswordException => (StatusCodes.Status401Unauthorized, "Invalid current password", exception.Message),
             InvalidRefreshTokenException => (StatusCodes.Status401Unauthorized, "Invalid refresh token", exception.Message),
             NotFoundException => (StatusCodes.Status404NotFound, "Not found", exception.Message),
             _ => (StatusCodes.Status500InternalServerError, "An unexpected error occurred", UnexpectedErrorDetail)

@@ -50,4 +50,20 @@ public class CategoryRepository : ICategoryRepository
         await _context.Categories.AddAsync(category, cancellationToken);
         await _context.SaveChangesAsync(cancellationToken);
     }
+
+    public async Task UpdateAsync(Category category, CancellationToken cancellationToken = default)
+    {
+        _context.Categories.Update(category);
+        await _context.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var category = await _context.Categories.FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
+        if (category is null)
+            return;
+
+        _context.Categories.Remove(category);
+        await _context.SaveChangesAsync(cancellationToken);
+    }
 }
