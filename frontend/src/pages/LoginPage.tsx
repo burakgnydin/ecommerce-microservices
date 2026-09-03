@@ -4,6 +4,7 @@ import { Boxes, Gift, Package, PackageCheck, PackageOpen, ShoppingBag, ShoppingC
 import { login } from '../api/auth'
 import { translateApiError } from '../api/client'
 import { AnimatedForm, Ripple, TechOrbitDisplay } from '../components/ui/AnimatedSignIn'
+import { useCart } from '../context/CartContext'
 import { storeTokens } from '../lib/auth'
 
 function OrbitIcon({ children }: { children: React.ReactNode }) {
@@ -28,6 +29,7 @@ const orbitIcons = [
 
 export default function LoginPage() {
   const navigate = useNavigate()
+  const { refresh } = useCart()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -40,6 +42,7 @@ export default function LoginPage() {
     try {
       const tokens = await login({ email, password })
       storeTokens(tokens)
+      await refresh()
       navigate('/')
     } catch (err) {
       setError(translateApiError(err, 'Giriş yapılamadı, tekrar deneyin.'))

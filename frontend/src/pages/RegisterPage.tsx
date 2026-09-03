@@ -3,6 +3,7 @@ import { type FormEvent, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { login, register } from '../api/auth'
 import { translateApiError } from '../api/client'
+import { useCart } from '../context/CartContext'
 import { storeTokens } from '../lib/auth'
 
 interface FieldBoxProps {
@@ -43,6 +44,7 @@ function FieldBox({ id, label, type = 'text', autoComplete, required, value, onC
 
 export default function RegisterPage() {
   const navigate = useNavigate()
+  const { refresh } = useCart()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -64,6 +66,7 @@ export default function RegisterPage() {
       await register({ name, email, password })
       const tokens = await login({ email, password })
       storeTokens(tokens)
+      await refresh()
       navigate('/')
     } catch (err) {
       setError(translateApiError(err, 'Kayıt oluşturulamadı, tekrar deneyin.'))
