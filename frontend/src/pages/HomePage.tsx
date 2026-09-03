@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { getProducts } from '../api/products'
 import type { Product } from '../api/types'
+import { FavoriteProducts } from '../components/FavoriteProducts'
 import { Header } from '../components/Header'
 import { ProductMarquee } from '../components/ProductMarquee'
 import { ProductScreenMockup } from '../components/ProductScreenMockup'
@@ -80,6 +81,8 @@ export default function HomePage() {
 
         <ProductScreenMockup products={products} />
       </main>
+
+      <FavoriteProducts products={products} />
 
       <div className="mx-auto max-w-6xl px-4 pb-16">
         <ProductMarquee products={products} />
