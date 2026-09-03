@@ -17,3 +17,7 @@ export function charge(request: ChargeRequest) {
     body: JSON.stringify(request),
   })
 }
+
+export function getMyPayments() {
+  return apiFetch<Payment[]>('/payments/api/payments', { headers: authHeader() })
+}

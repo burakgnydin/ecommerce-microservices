@@ -247,9 +247,13 @@ type TechOrbitDisplayProps = {
 const TechOrbitDisplay = memo(function TechOrbitDisplay({ iconsArray, text = 'E-Ticaret' }: TechOrbitDisplayProps) {
   return (
     <section className="relative flex h-full w-full flex-col items-center justify-center overflow-hidden rounded-lg">
-      <span className="pointer-events-none whitespace-pre-wrap bg-gradient-to-b from-foreground to-foreground/10 bg-clip-text text-center font-serif text-6xl font-semibold leading-none text-transparent">
+      <motion.span
+        className="pointer-events-none whitespace-pre-wrap text-center font-serif text-6xl font-semibold leading-none"
+        animate={{ color: ['#3b82f6', '#ffffff', '#3b82f6'] }}
+        transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+      >
         {text}
-      </span>
+      </motion.span>
 
       {iconsArray.map((icon, index) => (
         <OrbitingCircles

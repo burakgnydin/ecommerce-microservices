@@ -87,4 +87,18 @@ public class PaymentServiceTests
 
         _paymentRepository.Verify(r => r.CreateAsync(It.IsAny<Payment>(), It.IsAny<CancellationToken>()), Times.Never);
     }
+
+    [Fact]
+    public async Task GetByUserIdAsync_ReturnsMappedPayments()
+    {
+        var userId = Guid.NewGuid();
+        var payment = Payment.Succeeded(Guid.NewGuid(), userId, 19.98m, "**** **** **** 1234");
+        _paymentRepository.Setup(r => r.GetByUserIdAsync(userId, It.IsAny<CancellationToken>())).ReturnsAsync([payment]);
+
+        var result = await _sut.GetByUserIdAsync(userId);
+
+        var single = Assert.Single(result);
+        Assert.Equal(payment.Id, single.Id);
+        Assert.Equal("Succeeded", single.Status);
+    }
 }

@@ -1,5 +1,6 @@
 import { type ChangeEvent, type FormEvent, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { motion } from 'framer-motion'
 import { Boxes, Gift, Package, PackageCheck, PackageOpen, ShoppingBag, ShoppingCart, Truck, Warehouse } from 'lucide-react'
 import { login } from '../api/auth'
 import { translateApiError } from '../api/client'
@@ -7,24 +8,28 @@ import { AnimatedForm, Ripple, TechOrbitDisplay } from '../components/ui/Animate
 import { useCart } from '../context/CartContext'
 import { storeTokens } from '../lib/auth'
 
-function OrbitIcon({ children }: { children: React.ReactNode }) {
+function OrbitIcon({ children, pulseDelay = 0 }: { children: React.ReactNode; pulseDelay?: number }) {
   return (
-    <div className="flex h-full w-full items-center justify-center rounded-full border border-border bg-card text-foreground shadow-sm">
+    <motion.div
+      className="flex h-full w-full items-center justify-center rounded-full border border-border text-foreground shadow-sm"
+      animate={{ backgroundColor: ['#ffffff', '#3b82f6', '#ffffff'] }}
+      transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut', delay: pulseDelay }}
+    >
       {children}
-    </div>
+    </motion.div>
   )
 }
 
 const orbitIcons = [
-  { component: () => <OrbitIcon><Package className="h-3.5 w-3.5" /></OrbitIcon>, className: 'size-[30px] border-none bg-transparent', duration: 20, delay: 20, radius: 100, path: false },
-  { component: () => <OrbitIcon><Boxes className="h-3.5 w-3.5" /></OrbitIcon>, className: 'size-[30px] border-none bg-transparent', duration: 20, delay: 10, radius: 100, path: false },
-  { component: () => <OrbitIcon><Truck className="h-5 w-5" /></OrbitIcon>, className: 'size-[50px] border-none bg-transparent', radius: 210, duration: 20 },
-  { component: () => <OrbitIcon><ShoppingBag className="h-5 w-5" /></OrbitIcon>, className: 'size-[50px] border-none bg-transparent', radius: 210, duration: 20, delay: 20 },
-  { component: () => <OrbitIcon><Gift className="h-3.5 w-3.5" /></OrbitIcon>, className: 'size-[30px] border-none bg-transparent', radius: 150, duration: 20, delay: 20, reverse: true },
-  { component: () => <OrbitIcon><PackageCheck className="h-3.5 w-3.5" /></OrbitIcon>, className: 'size-[30px] border-none bg-transparent', radius: 150, duration: 20, delay: 10, reverse: true },
-  { component: () => <OrbitIcon><ShoppingCart className="h-5 w-5" /></OrbitIcon>, className: 'size-[50px] border-none bg-transparent', radius: 270, duration: 20, reverse: true },
-  { component: () => <OrbitIcon><PackageOpen className="h-5 w-5" /></OrbitIcon>, className: 'size-[50px] border-none bg-transparent', radius: 270, duration: 20, delay: 60, reverse: true },
-  { component: () => <OrbitIcon><Warehouse className="h-5 w-5" /></OrbitIcon>, className: 'size-[50px] border-none bg-transparent', radius: 320, duration: 20, delay: 20 },
+  { component: () => <OrbitIcon pulseDelay={0}><Package className="h-3.5 w-3.5" /></OrbitIcon>, className: 'size-[30px] border-none bg-transparent', duration: 20, delay: 20, radius: 100, path: false },
+  { component: () => <OrbitIcon pulseDelay={0.4}><Boxes className="h-3.5 w-3.5" /></OrbitIcon>, className: 'size-[30px] border-none bg-transparent', duration: 20, delay: 10, radius: 100, path: false },
+  { component: () => <OrbitIcon pulseDelay={0.8}><Truck className="h-5 w-5" /></OrbitIcon>, className: 'size-[50px] border-none bg-transparent', radius: 210, duration: 20 },
+  { component: () => <OrbitIcon pulseDelay={1.2}><ShoppingBag className="h-5 w-5" /></OrbitIcon>, className: 'size-[50px] border-none bg-transparent', radius: 210, duration: 20, delay: 20 },
+  { component: () => <OrbitIcon pulseDelay={1.6}><Gift className="h-3.5 w-3.5" /></OrbitIcon>, className: 'size-[30px] border-none bg-transparent', radius: 150, duration: 20, delay: 20, reverse: true },
+  { component: () => <OrbitIcon pulseDelay={2}><PackageCheck className="h-3.5 w-3.5" /></OrbitIcon>, className: 'size-[30px] border-none bg-transparent', radius: 150, duration: 20, delay: 10, reverse: true },
+  { component: () => <OrbitIcon pulseDelay={2.4}><ShoppingCart className="h-5 w-5" /></OrbitIcon>, className: 'size-[50px] border-none bg-transparent', radius: 270, duration: 20, reverse: true },
+  { component: () => <OrbitIcon pulseDelay={2.8}><PackageOpen className="h-5 w-5" /></OrbitIcon>, className: 'size-[50px] border-none bg-transparent', radius: 270, duration: 20, delay: 60, reverse: true },
+  { component: () => <OrbitIcon pulseDelay={3.2}><Warehouse className="h-5 w-5" /></OrbitIcon>, className: 'size-[50px] border-none bg-transparent', radius: 320, duration: 20, delay: 20 },
 ]
 
 export default function LoginPage() {

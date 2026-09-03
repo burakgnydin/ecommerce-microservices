@@ -34,7 +34,7 @@ public class OrderService : IOrderService
             items.Add(new OrderItem(product.Id, product.Name, product.Price, itemRequest.Quantity));
         }
 
-        var order = new Order(userId, items);
+        var order = new Order(userId, items, dto.ShippingTitle, dto.ShippingCity, dto.ShippingDistrict, dto.ShippingFullAddress);
         await _orderRepository.CreateAsync(order, cancellationToken);
 
         return order.ToDto();

@@ -33,6 +33,28 @@ export interface ChangePasswordRequest {
   newPassword: string
 }
 
+export interface Address {
+  id: string
+  title: string
+  city: string
+  district: string
+  fullAddress: string
+}
+
+export interface AddressCreateRequest {
+  title: string
+  city: string
+  district: string
+  fullAddress: string
+}
+
+export interface AddressUpdateRequest {
+  title: string
+  city: string
+  district: string
+  fullAddress: string
+}
+
 export interface Category {
   id: string
   name: string
@@ -114,6 +136,17 @@ export interface Order {
   totalAmount: number
   createdAt: string
   items: OrderItem[]
+  shippingTitle: string
+  shippingCity: string
+  shippingDistrict: string
+  shippingFullAddress: string
+}
+
+export interface CheckoutRequest {
+  shippingTitle: string
+  shippingCity: string
+  shippingDistrict: string
+  shippingFullAddress: string
 }
 
 export interface Payment {

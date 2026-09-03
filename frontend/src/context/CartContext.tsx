@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useState, type React
 import * as cartApi from '../api/cart'
 import { ApiError } from '../api/client'
 import { getAccessToken } from '../lib/auth'
-import type { Cart, Order } from '../api/types'
+import type { Cart, CheckoutRequest, Order } from '../api/types'
 
 interface CartContextValue {
   cart: Cart | null
@@ -13,7 +13,8 @@ interface CartContextValue {
   addItem: (productId: string, quantity: number) => Promise<void>
   updateQuantity: (productId: string, quantity: number) => Promise<void>
   removeItem: (productId: string) => Promise<void>
-  checkout: () => Promise<Order>
+  checkout: (dto: CheckoutRequest) => Promise<Order>
+  clearCart: () => void
 }
 
 const CartContext = createContext<CartContextValue | null>(null)
@@ -55,17 +56,19 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setCart(await cartApi.removeItem(productId))
   }, [])
 
-  const checkout = useCallback(async () => {
-    const order = await cartApi.checkout()
+  const checkout = useCallback(async (dto: CheckoutRequest) => {
+    return await cartApi.checkout(dto)
+  }, [])
+
+  const clearCart = useCallback(() => {
     setCart(null)
-    return order
   }, [])
 
   const itemCount = cart?.items.reduce((sum, item) => sum + item.quantity, 0) ?? 0
 
   return (
     <CartContext.Provider
-      value={{ cart, itemCount, isLoading, error, refresh, addItem, updateQuantity, removeItem, checkout }}
+      value={{ cart, itemCount, isLoading, error, refresh, addItem, updateQuantity, removeItem, checkout, clearCart }}
     >
       {children}
     </CartContext.Provider>

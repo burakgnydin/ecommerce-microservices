@@ -81,14 +81,15 @@ public class CartController : ControllerBase
     /// <summary>
     /// Converts the authenticated user's cart into an order, then clears the cart.
     /// </summary>
+    /// <param name="dto">Shipping address to attach to the order.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     [HttpPost("checkout")]
     [ProducesResponseType<OrderResponseDto>(StatusCodes.Status201Created)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<OrderResponseDto>> Checkout(CancellationToken cancellationToken)
+    public async Task<ActionResult<OrderResponseDto>> Checkout(CheckoutRequestDto dto, CancellationToken cancellationToken)
     {
-        var result = await _cartService.CheckoutAsync(GetUserId(), cancellationToken);
+        var result = await _cartService.CheckoutAsync(GetUserId(), dto, cancellationToken);
         return CreatedAtAction("GetById", "Orders", new { id = result.Id }, result);
     }
 

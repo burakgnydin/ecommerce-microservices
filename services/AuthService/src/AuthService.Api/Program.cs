@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 using AuthService.Api.ExceptionHandling;
 using AuthService.Application.DependencyInjection;
@@ -47,7 +48,8 @@ builder.Services.AddRateLimiter(options =>
         }));
 });
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
 builder.Services.AddOpenApi();
 

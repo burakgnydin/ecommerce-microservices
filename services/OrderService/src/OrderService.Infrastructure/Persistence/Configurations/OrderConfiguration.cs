@@ -28,6 +28,22 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
         builder.Property(o => o.CreatedAt)
             .IsRequired();
 
+        builder.Property(o => o.ShippingTitle)
+            .IsRequired()
+            .HasMaxLength(100);
+
+        builder.Property(o => o.ShippingCity)
+            .IsRequired()
+            .HasMaxLength(100);
+
+        builder.Property(o => o.ShippingDistrict)
+            .IsRequired()
+            .HasMaxLength(100);
+
+        builder.Property(o => o.ShippingFullAddress)
+            .IsRequired()
+            .HasMaxLength(500);
+
         builder.HasMany(o => o.Items)
             .WithOne()
             .HasForeignKey("OrderId")

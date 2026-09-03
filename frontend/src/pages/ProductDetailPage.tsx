@@ -1,13 +1,14 @@
 import { motion } from 'framer-motion'
 import { ChevronRight, Minus, PackageCheck, PackageX, Plus, Tag } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { ApiError } from '../api/client'
 import { getProductById } from '../api/products'
 import type { Product } from '../api/types'
 import { Header } from '../components/Header'
 import { ProductDetailSkeleton } from '../components/ProductDetailSkeleton'
 import { ProductImage } from '../components/ProductImage'
+import { AuthPrompt } from '../components/ui/AuthPrompt'
 import { Button } from '../components/ui/Button'
 import { ShimmerButton } from '../components/ui/ShimmerButton'
 import { useCart } from '../context/CartContext'
@@ -173,13 +174,7 @@ export default function ProductDetailPage() {
 
               {added && <p className="mt-2 text-sm text-success">Sepete eklendi.</p>}
               {addError === 'login' && (
-                <p className="mt-2 text-sm text-destructive">
-                  Sepete eklemek için{' '}
-                  <Link to="/login" className="underline">
-                    giriş yapmalısın
-                  </Link>
-                  .
-                </p>
+                <AuthPrompt variant="inline" className="mt-3" message="Sepete eklemek için giriş yapmalısın." />
               )}
               {addError && addError !== 'login' && <p className="mt-2 text-sm text-destructive">{addError}</p>}
 

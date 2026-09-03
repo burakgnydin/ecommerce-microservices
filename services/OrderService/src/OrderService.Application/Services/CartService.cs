@@ -76,7 +76,7 @@ public class CartService : ICartService
         return cart.ToDto();
     }
 
-    public async Task<OrderResponseDto> CheckoutAsync(Guid userId, CancellationToken cancellationToken = default)
+    public async Task<OrderResponseDto> CheckoutAsync(Guid userId, CheckoutRequestDto dto, CancellationToken cancellationToken = default)
     {
         var cart = await GetOwnedCartAsync(userId, cancellationToken);
         if (cart.Items.Count == 0)
@@ -85,7 +85,11 @@ public class CartService : ICartService
         }
 
         var orderDto = new OrderCreateDto(
-            cart.Items.Select(i => new OrderItemCreateDto(i.ProductId, i.Quantity)).ToList());
+            cart.Items.Select(i => new OrderItemCreateDto(i.ProductId, i.Quantity)).ToList(),
+            dto.ShippingTitle,
+            dto.ShippingCity,
+            dto.ShippingDistrict,
+            dto.ShippingFullAddress);
 
         var order = await _orderService.CreateAsync(userId, orderDto, cancellationToken);
 

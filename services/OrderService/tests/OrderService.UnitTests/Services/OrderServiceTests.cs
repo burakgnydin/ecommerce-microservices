@@ -21,6 +21,12 @@ public class OrderServiceTests
     private static ProductCatalogItem CreateProduct(Guid? id = null, decimal price = 9.99m, int stock = 10)
         => new(id ?? Guid.NewGuid(), "Widget", price, stock);
 
+    private static Order CreateOrder(Guid userId, IEnumerable<OrderItem> items)
+        => new(userId, items, "Ev", "İstanbul", "Kadıköy", "Örnek Mah. Örnek Sok. No:1");
+
+    private static OrderCreateDto CreateOrderDto(IReadOnlyList<OrderItemCreateDto> items)
+        => new(items, "Ev", "İstanbul", "Kadıköy", "Örnek Mah. Örnek Sok. No:1");
+
     [Fact]
     public async Task CreateAsync_CreatesOrder_WhenProductsExistAndStockIsSufficient()
     {
@@ -28,7 +34,7 @@ public class OrderServiceTests
         var productId = Guid.NewGuid();
         var product = CreateProduct(productId, price: 9.99m, stock: 10);
         _productCatalogClient.Setup(c => c.GetProductAsync(productId, It.IsAny<CancellationToken>())).ReturnsAsync(product);
-        var dto = new OrderCreateDto([new OrderItemCreateDto(productId, 2)]);
+        var dto = CreateOrderDto([new OrderItemCreateDto(productId, 2)]);
 
         var result = await _sut.CreateAsync(userId, dto);
 
@@ -42,7 +48,7 @@ public class OrderServiceTests
     {
         var productId = Guid.NewGuid();
         _productCatalogClient.Setup(c => c.GetProductAsync(productId, It.IsAny<CancellationToken>())).ReturnsAsync((ProductCatalogItem?)null);
-        var dto = new OrderCreateDto([new OrderItemCreateDto(productId, 1)]);
+        var dto = CreateOrderDto([new OrderItemCreateDto(productId, 1)]);
 
         await Assert.ThrowsAsync<ProductNotFoundException>(() => _sut.CreateAsync(Guid.NewGuid(), dto));
         _orderRepository.Verify(r => r.CreateAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -54,7 +60,7 @@ public class OrderServiceTests
         var productId = Guid.NewGuid();
         var product = CreateProduct(productId, stock: 1);
         _productCatalogClient.Setup(c => c.GetProductAsync(productId, It.IsAny<CancellationToken>())).ReturnsAsync(product);
-        var dto = new OrderCreateDto([new OrderItemCreateDto(productId, 5)]);
+        var dto = CreateOrderDto([new OrderItemCreateDto(productId, 5)]);
 
         await Assert.ThrowsAsync<InsufficientStockException>(() => _sut.CreateAsync(Guid.NewGuid(), dto));
         _orderRepository.Verify(r => r.CreateAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -66,7 +72,7 @@ public class OrderServiceTests
         var productId = Guid.NewGuid();
         _productCatalogClient.Setup(c => c.GetProductAsync(productId, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new ProductServiceUnavailableException("product-service is unreachable."));
-        var dto = new OrderCreateDto([new OrderItemCreateDto(productId, 1)]);
+        var dto = CreateOrderDto([new OrderItemCreateDto(productId, 1)]);
 
         await Assert.ThrowsAsync<ProductServiceUnavailableException>(() => _sut.CreateAsync(Guid.NewGuid(), dto));
         _orderRepository.Verify(r => r.CreateAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -76,7 +82,7 @@ public class OrderServiceTests
     public async Task GetByIdAsync_ReturnsOrder_WhenOwnedByUser()
     {
         var userId = Guid.NewGuid();
-        var order = new Order(userId, [new OrderItem(Guid.NewGuid(), "Widget", 9.99m, 1)]);
+        var order = CreateOrder(userId, [new OrderItem(Guid.NewGuid(), "Widget", 9.99m, 1)]);
         _orderRepository.Setup(r => r.GetByIdAsync(order.Id, It.IsAny<CancellationToken>())).ReturnsAsync(order);
 
         var result = await _sut.GetByIdAsync(order.Id, userId);
@@ -96,7 +102,7 @@ public class OrderServiceTests
     [Fact]
     public async Task GetByIdAsync_Throws_WhenOrderIsNotOwnedByUser()
     {
-        var order = new Order(Guid.NewGuid(), [new OrderItem(Guid.NewGuid(), "Widget", 9.99m, 1)]);
+        var order = CreateOrder(Guid.NewGuid(), [new OrderItem(Guid.NewGuid(), "Widget", 9.99m, 1)]);
         _orderRepository.Setup(r => r.GetByIdAsync(order.Id, It.IsAny<CancellationToken>())).ReturnsAsync(order);
 
         await Assert.ThrowsAsync<NotFoundException>(() => _sut.GetByIdAsync(order.Id, Guid.NewGuid()));
@@ -106,7 +112,7 @@ public class OrderServiceTests
     public async Task CancelAsync_CancelsOrder_WhenPendingAndOwnedByUser()
     {
         var userId = Guid.NewGuid();
-        var order = new Order(userId, [new OrderItem(Guid.NewGuid(), "Widget", 9.99m, 1)]);
+        var order = CreateOrder(userId, [new OrderItem(Guid.NewGuid(), "Widget", 9.99m, 1)]);
         _orderRepository.Setup(r => r.GetByIdAsync(order.Id, It.IsAny<CancellationToken>())).ReturnsAsync(order);
 
         var result = await _sut.CancelAsync(order.Id, userId);
@@ -118,7 +124,7 @@ public class OrderServiceTests
     [Fact]
     public async Task CancelAsync_Throws_WhenOrderIsNotOwnedByUser()
     {
-        var order = new Order(Guid.NewGuid(), [new OrderItem(Guid.NewGuid(), "Widget", 9.99m, 1)]);
+        var order = CreateOrder(Guid.NewGuid(), [new OrderItem(Guid.NewGuid(), "Widget", 9.99m, 1)]);
         _orderRepository.Setup(r => r.GetByIdAsync(order.Id, It.IsAny<CancellationToken>())).ReturnsAsync(order);
 
         await Assert.ThrowsAsync<NotFoundException>(() => _sut.CancelAsync(order.Id, Guid.NewGuid()));
@@ -128,7 +134,7 @@ public class OrderServiceTests
     public async Task CancelAsync_Throws_WhenOrderIsAlreadyCancelled()
     {
         var userId = Guid.NewGuid();
-        var order = new Order(userId, [new OrderItem(Guid.NewGuid(), "Widget", 9.99m, 1)]);
+        var order = CreateOrder(userId, [new OrderItem(Guid.NewGuid(), "Widget", 9.99m, 1)]);
         order.Cancel();
         _orderRepository.Setup(r => r.GetByIdAsync(order.Id, It.IsAny<CancellationToken>())).ReturnsAsync(order);
 
@@ -139,7 +145,7 @@ public class OrderServiceTests
     public async Task MarkAsPaidAsync_MarksOrderAsPaid_WhenPending()
     {
         var userId = Guid.NewGuid();
-        var order = new Order(userId, [new OrderItem(Guid.NewGuid(), "Widget", 9.99m, 1)]);
+        var order = CreateOrder(userId, [new OrderItem(Guid.NewGuid(), "Widget", 9.99m, 1)]);
         _orderRepository.Setup(r => r.GetByIdAsync(order.Id, It.IsAny<CancellationToken>())).ReturnsAsync(order);
 
         var result = await _sut.MarkAsPaidAsync(order.Id);
@@ -161,7 +167,7 @@ public class OrderServiceTests
     public async Task MarkAsPaidAsync_Throws_WhenOrderIsAlreadyPaid()
     {
         var userId = Guid.NewGuid();
-        var order = new Order(userId, [new OrderItem(Guid.NewGuid(), "Widget", 9.99m, 1)]);
+        var order = CreateOrder(userId, [new OrderItem(Guid.NewGuid(), "Widget", 9.99m, 1)]);
         order.MarkAsPaid();
         _orderRepository.Setup(r => r.GetByIdAsync(order.Id, It.IsAny<CancellationToken>())).ReturnsAsync(order);
 

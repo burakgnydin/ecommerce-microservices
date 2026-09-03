@@ -1,6 +1,6 @@
 import { apiFetch } from './client'
 import { authHeader } from '../lib/auth'
-import type { Cart, Order } from './types'
+import type { Cart, CheckoutRequest, Order } from './types'
 
 export function getCart() {
   return apiFetch<Cart>('/orders/api/cart', { headers: authHeader() })
@@ -29,9 +29,10 @@ export function removeItem(productId: string) {
   })
 }
 
-export function checkout() {
+export function checkout(dto: CheckoutRequest) {
   return apiFetch<Order>('/orders/api/cart/checkout', {
     method: 'POST',
     headers: authHeader(),
+    body: JSON.stringify(dto),
   })
 }

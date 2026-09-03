@@ -34,6 +34,9 @@ public class CartApiTests : IAsyncLifetime
     private void Authenticate(Guid userId)
         => _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _factory.CreateAccessToken(userId));
 
+    private static CheckoutRequestDto CreateCheckoutRequest()
+        => new("Ev", "İstanbul", "Kadıköy", "Örnek Mah. Örnek Sok. No:1");
+
     [Fact]
     public async Task AddItemThenGet_ReturnsCartWithItem()
     {
@@ -103,7 +106,7 @@ public class CartApiTests : IAsyncLifetime
         Authenticate(Guid.NewGuid());
         await _client.PostAsJsonAsync("/api/cart/items", new CartItemAddDto(productId, 2));
 
-        var checkoutResponse = await _client.PostAsync("/api/cart/checkout", null);
+        var checkoutResponse = await _client.PostAsJsonAsync("/api/cart/checkout", CreateCheckoutRequest());
 
         Assert.Equal(HttpStatusCode.Created, checkoutResponse.StatusCode);
         var order = await checkoutResponse.Content.ReadFromJsonAsync<OrderResponseDto>();
@@ -119,7 +122,7 @@ public class CartApiTests : IAsyncLifetime
         Authenticate(Guid.NewGuid());
         await _client.GetAsync("/api/cart");
 
-        var response = await _client.PostAsync("/api/cart/checkout", null);
+        var response = await _client.PostAsJsonAsync("/api/cart/checkout", CreateCheckoutRequest());
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
@@ -129,7 +132,7 @@ public class CartApiTests : IAsyncLifetime
     {
         Authenticate(Guid.NewGuid());
 
-        var response = await _client.PostAsync("/api/cart/checkout", null);
+        var response = await _client.PostAsJsonAsync("/api/cart/checkout", CreateCheckoutRequest());
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }

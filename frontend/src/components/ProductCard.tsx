@@ -1,7 +1,12 @@
 import { motion, useReducedMotion } from 'framer-motion'
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight, Minus, Plus } from 'lucide-react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { ApiError } from '../api/client'
 import type { Product } from '../api/types'
+import { useCart } from '../context/CartContext'
+import { AuthPrompt } from './ui/AuthPrompt'
+import { Button } from './ui/Button'
 import { ProductImage } from './ProductImage'
 
 interface ProductCardProps {
@@ -30,6 +35,30 @@ export function ProductCard({ product }: ProductCardProps) {
   const shouldReduceMotion = useReducedMotion()
   const isOutOfStock = product.stock <= 0 && !product.allowsPreOrder
   const isPreOrder = product.stock <= 0 && product.allowsPreOrder
+  const { addItem } = useCart()
+  const [quantity, setQuantity] = useState(1)
+  const [isAdding, setIsAdding] = useState(false)
+  const [added, setAdded] = useState(false)
+  const [addError, setAddError] = useState<string | null>(null)
+
+  async function handleAddToCart(event: React.MouseEvent) {
+    event.preventDefault()
+    setAddError(null)
+    setAdded(false)
+    setIsAdding(true)
+    try {
+      await addItem(product.id, quantity)
+      setAdded(true)
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401) {
+        setAddError('login')
+      } else {
+        setAddError(err instanceof ApiError ? err.message : 'Sepete eklenemedi.')
+      }
+    } finally {
+      setIsAdding(false)
+    }
+  }
 
   return (
     <Link to={`/products/${product.id}`} className="block h-full">
@@ -82,6 +111,44 @@ export function ProductCard({ product }: ProductCardProps) {
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
             </span>
           </motion.div>
+        )}
+
+        {(product.stock > 0 || product.allowsPreOrder) && (
+          <div className="border-t border-border bg-card p-3">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.preventDefault()
+                  setQuantity((q) => Math.max(1, q - 1))
+                }}
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border text-foreground hover:bg-secondary"
+                aria-label="Azalt"
+              >
+                <Minus className="h-3.5 w-3.5" />
+              </button>
+              <span className="w-6 shrink-0 text-center text-sm font-medium text-foreground">{quantity}</span>
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.preventDefault()
+                  setQuantity((q) => q + 1)
+                }}
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border text-foreground hover:bg-secondary"
+                aria-label="Artır"
+              >
+                <Plus className="h-3.5 w-3.5" />
+              </button>
+              <Button type="button" size="sm" className="flex-1" onClick={handleAddToCart} disabled={isAdding}>
+                {isAdding ? 'Ekleniyor...' : 'Sepete Ekle'}
+              </Button>
+            </div>
+            {added && <p className="mt-2 text-xs text-success">Sepete eklendi.</p>}
+            {addError === 'login' && (
+              <AuthPrompt variant="inline" className="mt-2" message="Sepete eklemek için giriş yapmalısın." />
+            )}
+            {addError && addError !== 'login' && <p className="mt-2 text-xs text-destructive">{addError}</p>}
+          </div>
         )}
       </motion.div>
     </Link>

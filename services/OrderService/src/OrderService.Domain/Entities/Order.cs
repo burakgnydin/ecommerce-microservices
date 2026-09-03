@@ -10,6 +10,10 @@ public class Order
     public decimal TotalAmount { get; private set; }
     public DateTime CreatedAt { get; private set; }
     public ICollection<OrderItem> Items { get; private set; } = new List<OrderItem>();
+    public string ShippingTitle { get; private set; }
+    public string ShippingCity { get; private set; }
+    public string ShippingDistrict { get; private set; }
+    public string ShippingFullAddress { get; private set; }
 
     // Reserved for EF Core materialization: navigation collections cannot be bound
     // through the public constructor's parameters, only scalar properties can.
@@ -17,16 +21,26 @@ public class Order
     {
     }
 
-    public Order(Guid userId, IEnumerable<OrderItem> items)
+    public Order(
+        Guid userId,
+        IEnumerable<OrderItem> items,
+        string shippingTitle,
+        string shippingCity,
+        string shippingDistrict,
+        string shippingFullAddress)
     {
         var itemList = items?.ToList() ?? throw new ArgumentNullException(nameof(items));
-        Validate(userId, itemList);
+        Validate(userId, itemList, shippingTitle, shippingCity, shippingDistrict, shippingFullAddress);
 
         Id = Guid.NewGuid();
         UserId = userId;
         Status = OrderStatus.Pending;
         Items = itemList;
         TotalAmount = itemList.Sum(i => i.Subtotal);
+        ShippingTitle = shippingTitle;
+        ShippingCity = shippingCity;
+        ShippingDistrict = shippingDistrict;
+        ShippingFullAddress = shippingFullAddress;
         CreatedAt = DateTime.UtcNow;
     }
 
@@ -46,11 +60,25 @@ public class Order
         Status = OrderStatus.Paid;
     }
 
-    private static void Validate(Guid userId, ICollection<OrderItem> items)
+    private static void Validate(
+        Guid userId,
+        ICollection<OrderItem> items,
+        string shippingTitle,
+        string shippingCity,
+        string shippingDistrict,
+        string shippingFullAddress)
     {
         if (userId == Guid.Empty)
             throw new ArgumentException("UserId is required.", nameof(userId));
         if (items.Count == 0)
             throw new ArgumentException("Order must contain at least one item.", nameof(items));
+        if (string.IsNullOrWhiteSpace(shippingTitle))
+            throw new ArgumentException("ShippingTitle is required.", nameof(shippingTitle));
+        if (string.IsNullOrWhiteSpace(shippingCity))
+            throw new ArgumentException("ShippingCity is required.", nameof(shippingCity));
+        if (string.IsNullOrWhiteSpace(shippingDistrict))
+            throw new ArgumentException("ShippingDistrict is required.", nameof(shippingDistrict));
+        if (string.IsNullOrWhiteSpace(shippingFullAddress))
+            throw new ArgumentException("ShippingFullAddress is required.", nameof(shippingFullAddress));
     }
 }

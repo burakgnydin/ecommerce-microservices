@@ -1,13 +1,15 @@
 import { motion } from 'framer-motion'
 import { Minus, Plus, Trash2 } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { type FormEvent, useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { createAddress, getAddresses } from '../api/addresses'
+import { ApiError, translateApiError } from '../api/client'
 import { getProductById } from '../api/products'
-import { ApiError } from '../api/client'
-import type { Order, Payment, Product } from '../api/types'
+import type { Address, Order, Payment, Product } from '../api/types'
 import { CardPaymentForm } from '../components/CardPaymentForm'
 import { Header } from '../components/Header'
 import { ProductImage } from '../components/ProductImage'
+import { AuthPrompt } from '../components/ui/AuthPrompt'
 import { Skeleton } from '../components/ui/Skeleton'
 import { Button } from '../components/ui/Button'
 import { OrderConfirmationCard } from '../components/ui/OrderConfirmationCard'
@@ -18,8 +20,11 @@ function formatPrice(price: number) {
   return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(price)
 }
 
+const inputClasses =
+  'h-10 w-full rounded-md border border-border bg-card px-3 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring'
+
 export default function CartPage() {
-  const { cart, isLoading, error, updateQuantity, removeItem, checkout } = useCart()
+  const { cart, isLoading, error, updateQuantity, removeItem, checkout, clearCart } = useCart()
   const navigate = useNavigate()
   const [products, setProducts] = useState<Record<string, Product>>({})
   const [isEnriching, setIsEnriching] = useState(false)
@@ -27,6 +32,19 @@ export default function CartPage() {
   const [payment, setPayment] = useState<Payment | null>(null)
   const [checkoutError, setCheckoutError] = useState<string | null>(null)
   const [isCheckingOut, setIsCheckingOut] = useState(false)
+
+  const [step, setStep] = useState<'cart' | 'address'>('cart')
+  const [addresses, setAddresses] = useState<Address[]>([])
+  const [isLoadingAddresses, setIsLoadingAddresses] = useState(false)
+  const [addressError, setAddressError] = useState<string | null>(null)
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null)
+
+  const [isAddingAddress, setIsAddingAddress] = useState(false)
+  const [newAddressTitle, setNewAddressTitle] = useState('')
+  const [newAddressCity, setNewAddressCity] = useState('')
+  const [newAddressDistrict, setNewAddressDistrict] = useState('')
+  const [newAddressFullAddress, setNewAddressFullAddress] = useState('')
+  const [isSavingAddress, setIsSavingAddress] = useState(false)
 
   const isLoggedIn = Boolean(getAccessToken())
 
@@ -48,16 +66,71 @@ export default function CartPage() {
       .finally(() => setIsEnriching(false))
   }, [cart, products])
 
+  function handleGoToAddressStep() {
+    setCheckoutError(null)
+    setStep('address')
+    if (addresses.length === 0) {
+      setIsLoadingAddresses(true)
+      setAddressError(null)
+      getAddresses()
+        .then((result) => {
+          setAddresses(result)
+          if (result.length > 0) setSelectedAddressId(result[0].id)
+        })
+        .catch((err) => setAddressError(translateApiError(err, 'Adresler yüklenemedi.')))
+        .finally(() => setIsLoadingAddresses(false))
+    }
+  }
+
+  async function handleAddAddress(event: FormEvent) {
+    event.preventDefault()
+    setAddressError(null)
+    setIsSavingAddress(true)
+    try {
+      const address = await createAddress({
+        title: newAddressTitle,
+        city: newAddressCity,
+        district: newAddressDistrict,
+        fullAddress: newAddressFullAddress,
+      })
+      setAddresses((prev) => [...prev, address])
+      setSelectedAddressId(address.id)
+      setIsAddingAddress(false)
+      setNewAddressTitle('')
+      setNewAddressCity('')
+      setNewAddressDistrict('')
+      setNewAddressFullAddress('')
+    } catch (err) {
+      setAddressError(translateApiError(err, 'Adres eklenemedi.'))
+    } finally {
+      setIsSavingAddress(false)
+    }
+  }
+
   async function handleCheckout() {
+    const address = addresses.find((a) => a.id === selectedAddressId)
+    if (!address) return
     setCheckoutError(null)
     setIsCheckingOut(true)
     try {
-      setOrder(await checkout())
+      setOrder(
+        await checkout({
+          shippingTitle: address.title,
+          shippingCity: address.city,
+          shippingDistrict: address.district,
+          shippingFullAddress: address.fullAddress,
+        }),
+      )
     } catch (err) {
       setCheckoutError(err instanceof ApiError ? err.message : 'Sepet onaylanamadı.')
     } finally {
       setIsCheckingOut(false)
     }
+  }
+
+  function handlePaymentSuccess(paymentResult: Payment) {
+    clearCart()
+    setPayment(paymentResult)
   }
 
   if (order && payment) {
@@ -89,11 +162,11 @@ export default function CartPage() {
             transition={{ duration: 0.3, ease: 'easeOut' }}
             className="rounded-xl border border-border bg-card p-8"
           >
-            <h1 className="text-2xl font-semibold text-foreground">Siparişin oluşturuldu</h1>
+            <h1 className="text-2xl font-semibold text-foreground">Ödemeni tamamla</h1>
             <p className="mt-2 text-sm text-muted-foreground">Sipariş No: {order.id}</p>
             <p className="mt-4 text-lg font-bold text-foreground">{formatPrice(order.totalAmount)}</p>
             <div className="mt-6">
-              <CardPaymentForm orderId={order.id} onSuccess={setPayment} />
+              <CardPaymentForm orderId={order.id} onSuccess={handlePaymentSuccess} />
             </div>
           </motion.div>
         </main>
@@ -107,15 +180,7 @@ export default function CartPage() {
       <main className="mx-auto max-w-3xl px-4 py-10">
         <h1 className="text-2xl font-semibold text-foreground">Sepetim</h1>
 
-        {!isLoggedIn && (
-          <p className="mt-6 text-muted-foreground">
-            Sepetini görmek için{' '}
-            <Link to="/login" className="text-primary hover:underline">
-              giriş yapmalısın
-            </Link>
-            .
-          </p>
-        )}
+        {!isLoggedIn && <AuthPrompt className="mt-6" message="Sepetini görmek için giriş yapmalısın." />}
 
         {isLoggedIn && error && <p className="mt-6 text-destructive">{error}</p>}
 
@@ -136,29 +201,31 @@ export default function CartPage() {
           </p>
         )}
 
-        {isLoggedIn && !error && !isLoading && cart && cart.items.length > 0 && (
+        {isLoggedIn && !error && !isLoading && cart && cart.items.length > 0 && step === 'cart' && (
           <>
             <div className="mt-6 divide-y divide-border">
               {cart.items.map((item) => {
                 const product = products[item.productId]
                 return (
                   <div key={item.productId} className="flex items-center gap-4 py-4">
-                    {product ? (
-                      <ProductImage product={product} className="h-16 w-16 rounded-lg" iconClassName="h-6 w-6" />
-                    ) : (
-                      <Skeleton className="h-16 w-16 rounded-lg" />
-                    )}
-
-                    <div className="flex-1">
+                    <Link to={`/products/${item.productId}`} className="flex flex-1 items-center gap-4">
                       {product ? (
-                        <>
-                          <p className="font-medium text-foreground">{product.name}</p>
-                          <p className="text-sm text-muted-foreground">{formatPrice(product.price)}</p>
-                        </>
+                        <ProductImage product={product} className="h-16 w-16 rounded-lg" iconClassName="h-6 w-6" />
                       ) : (
-                        <Skeleton className="h-5 w-32" />
+                        <Skeleton className="h-16 w-16 rounded-lg" />
                       )}
-                    </div>
+
+                      <div className="flex-1">
+                        {product ? (
+                          <>
+                            <p className="font-medium text-foreground hover:underline">{product.name}</p>
+                            <p className="text-sm text-muted-foreground">{formatPrice(product.price)}</p>
+                          </>
+                        ) : (
+                          <Skeleton className="h-5 w-32" />
+                        )}
+                      </div>
+                    </Link>
 
                     <div className="flex items-center gap-2">
                       <button
@@ -208,13 +275,131 @@ export default function CartPage() {
                   cart.items.reduce((sum, item) => sum + (products[item.productId]?.price ?? 0) * item.quantity, 0),
                 )}
               </span>
-              <Button onClick={handleCheckout} disabled={isCheckingOut || isEnriching}>
-                {isCheckingOut ? 'İşleniyor...' : 'Sepeti Onayla'}
+              <Button onClick={handleGoToAddressStep} disabled={isEnriching}>
+                Sepeti Onayla
+              </Button>
+            </div>
+          </>
+        )}
+
+        {isLoggedIn && !error && !isLoading && cart && cart.items.length > 0 && step === 'address' && (
+          <div className="mt-6">
+            <button
+              type="button"
+              onClick={() => setStep('cart')}
+              className="text-sm text-muted-foreground hover:text-foreground"
+            >
+              ← Sepete dön
+            </button>
+
+            <h2 className="mt-4 text-lg font-semibold text-foreground">Teslimat adresi</h2>
+
+            {isLoadingAddresses && (
+              <div className="mt-4 space-y-3">
+                <Skeleton className="h-16 w-full rounded-lg" />
+                <Skeleton className="h-16 w-full rounded-lg" />
+              </div>
+            )}
+
+            {!isLoadingAddresses && (
+              <div className="mt-4 space-y-3">
+                {addresses.map((address) => (
+                  <label
+                    key={address.id}
+                    className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 ${
+                      selectedAddressId === address.id ? 'border-primary bg-primary/5' : 'border-border'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="address"
+                      className="mt-1"
+                      checked={selectedAddressId === address.id}
+                      onChange={() => setSelectedAddressId(address.id)}
+                    />
+                    <div>
+                      <p className="font-medium text-foreground">{address.title}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {address.fullAddress}, {address.district}/{address.city}
+                      </p>
+                    </div>
+                  </label>
+                ))}
+
+                {!isAddingAddress && (
+                  <button
+                    type="button"
+                    onClick={() => setIsAddingAddress(true)}
+                    className="text-sm text-primary hover:underline"
+                  >
+                    + Yeni adres ekle
+                  </button>
+                )}
+
+                {isAddingAddress && (
+                  <form onSubmit={handleAddAddress} className="space-y-3 rounded-lg border border-border p-4">
+                    <input
+                      type="text"
+                      required
+                      placeholder="Başlık (ör. Ev)"
+                      value={newAddressTitle}
+                      onChange={(e) => setNewAddressTitle(e.target.value)}
+                      className={inputClasses}
+                    />
+                    <div className="flex gap-3">
+                      <input
+                        type="text"
+                        required
+                        placeholder="İl"
+                        value={newAddressCity}
+                        onChange={(e) => setNewAddressCity(e.target.value)}
+                        className={inputClasses}
+                      />
+                      <input
+                        type="text"
+                        required
+                        placeholder="İlçe"
+                        value={newAddressDistrict}
+                        onChange={(e) => setNewAddressDistrict(e.target.value)}
+                        className={inputClasses}
+                      />
+                    </div>
+                    <textarea
+                      required
+                      placeholder="Açık adres"
+                      value={newAddressFullAddress}
+                      onChange={(e) => setNewAddressFullAddress(e.target.value)}
+                      className={`${inputClasses} h-20 resize-none py-2`}
+                    />
+                    <div className="flex items-center gap-2">
+                      <Button type="submit" size="sm" disabled={isSavingAddress}>
+                        {isSavingAddress ? 'Kaydediliyor...' : 'Adresi kaydet'}
+                      </Button>
+                      <Button type="button" size="sm" variant="outline" onClick={() => setIsAddingAddress(false)}>
+                        Vazgeç
+                      </Button>
+                    </div>
+                  </form>
+                )}
+              </div>
+            )}
+
+            {addressError && <p className="mt-3 text-destructive">{addressError}</p>}
+
+            <div className="mt-6 flex items-center justify-between border-t border-border pt-6">
+              <span className="text-lg font-semibold text-foreground">
+                Toplam:{' '}
+                {formatPrice(
+                  cart.items.reduce((sum, item) => sum + (products[item.productId]?.price ?? 0) * item.quantity, 0),
+                )}
+              </span>
+              <Button onClick={handleCheckout} disabled={!selectedAddressId || isCheckingOut}>
+                {isCheckingOut ? 'İşleniyor...' : 'Ödemeye Geç'}
               </Button>
             </div>
 
             {checkoutError && <p className="mt-3 text-destructive">{checkoutError}</p>}
-          </>
+          </div>
         )}
       </main>
     </div>

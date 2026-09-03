@@ -10,6 +10,7 @@ import { ProductScreenMockup } from '../components/ProductScreenMockup'
 import { SearchBar } from '../components/ui/SearchBar'
 import { GradientText } from '../components/ui/GradientText'
 import { Highlight } from '../components/ui/HeroHighlight'
+import { InteractiveImageAccordion } from '../components/ui/InteractiveImageAccordion'
 import { ShimmerButton } from '../components/ui/ShimmerButton'
 
 const fadeUp = {
@@ -41,45 +42,54 @@ export default function HomePage() {
   return (
     <div className="min-h-screen">
       <Header />
-      <main className="mx-auto flex max-w-3xl flex-col items-center px-4 pb-16 pt-10 text-center">
-        <motion.h1
-          custom={0}
-          initial="hidden"
-          animate="visible"
-          variants={fadeUp}
-          className="text-4xl font-semibold leading-tight text-foreground sm:text-5xl"
-        >
-          Alışverişin <GradientText>Sade</GradientText> Hali
-        </motion.h1>
-        <motion.div custom={1} initial="hidden" animate="visible" variants={fadeUp} className="mt-4 max-w-md">
-          <p className="text-base font-semibold leading-relaxed text-muted-foreground">
-            Güncel ürünleri keşfet, hesabını oluştur ve alışverişe <Highlight>birkaç tıkla</Highlight> başla.
-          </p>
-        </motion.div>
-        <motion.div
-          custom={2}
-          initial="hidden"
-          animate="visible"
-          variants={fadeUp}
-          className="mt-6 w-full max-w-sm"
-        >
-          <SearchBar
-            value={search}
-            onChange={setSearch}
-            onSubmit={(value) => navigate(value ? `/products?search=${encodeURIComponent(value)}` : '/products')}
-            placeholder="Ne arıyorsun?"
-          />
-        </motion.div>
-        <motion.div custom={3} initial="hidden" animate="visible" variants={fadeUp} className="mt-4">
-          <Link to="/products">
-            <ShimmerButton className="w-48 h-12">
-              <span className="whitespace-pre-wrap text-center text-sm font-medium leading-none tracking-tight lg:text-lg">
-                Ürünleri Keşfet
-              </span>
-            </ShimmerButton>
-          </Link>
-        </motion.div>
 
+      <section className="mx-auto max-w-6xl px-4 pb-16 pt-10">
+        <div className="grid grid-cols-1 items-center gap-12 md:grid-cols-2">
+          <div className="flex flex-col items-center text-center md:items-start md:text-left">
+            <motion.h1
+              custom={0}
+              initial="hidden"
+              animate="visible"
+              variants={fadeUp}
+              className="text-4xl font-semibold leading-tight text-foreground sm:text-5xl"
+            >
+              Alışverişin <GradientText>Sade</GradientText> Hali
+            </motion.h1>
+            <motion.div custom={1} initial="hidden" animate="visible" variants={fadeUp} className="mt-4 max-w-md">
+              <p className="text-base font-semibold leading-relaxed text-muted-foreground">
+                Güncel ürünleri keşfet, hesabını oluştur ve alışverişe <Highlight>birkaç tıkla</Highlight> başla.
+              </p>
+            </motion.div>
+            <motion.div
+              custom={2}
+              initial="hidden"
+              animate="visible"
+              variants={fadeUp}
+              className="mt-6 w-full max-w-sm"
+            >
+              <SearchBar
+                value={search}
+                onChange={setSearch}
+                onSubmit={(value) => navigate(value ? `/products?search=${encodeURIComponent(value)}` : '/products')}
+                placeholder="Ne arıyorsun?"
+              />
+            </motion.div>
+            <motion.div custom={3} initial="hidden" animate="visible" variants={fadeUp} className="mt-4">
+              <Link to="/products">
+                <ShimmerButton className="w-48 h-12">
+                  <span className="whitespace-pre-wrap text-center text-sm font-medium leading-none tracking-tight lg:text-lg">
+                    Ürünleri Keşfet
+                  </span>
+                </ShimmerButton>
+              </Link>
+            </motion.div>
+          </div>
+
+          <InteractiveImageAccordion products={products} />
+        </div>
+      </section>
+
+      <main className="mx-auto flex max-w-3xl flex-col items-center px-4 pb-16 text-center">
         <ProductScreenMockup products={products} />
       </main>
 

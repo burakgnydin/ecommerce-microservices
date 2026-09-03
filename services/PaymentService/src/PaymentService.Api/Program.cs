@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using FluentValidation;
 using PaymentService.Api.ExceptionHandling;
 using PaymentService.Application.DependencyInjection;
@@ -20,7 +21,8 @@ builder.Services.AddApplicationServices();
 builder.Services.AddValidatorsFromAssemblyContaining<PaymentRequestDtoValidator>();
 builder.Services.AddFluentValidationAutoValidation();
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
 builder.Services.AddOpenApi();
 
