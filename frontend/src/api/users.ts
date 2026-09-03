@@ -1,6 +1,6 @@
 import { apiFetch } from './client'
 import { authHeader } from '../lib/auth'
-import type { ChangePasswordRequest, UserResponse, UserUpdateRequest } from './types'
+import type { AdminUser, ChangePasswordRequest, UserResponse, UserUpdateRequest } from './types'
 
 export function getMe() {
   return apiFetch<UserResponse>('/auth/api/users/me', {
@@ -22,4 +22,8 @@ export function changePassword(dto: ChangePasswordRequest) {
     headers: authHeader(),
     body: JSON.stringify(dto),
   })
+}
+
+export function getAllUsersAdmin() {
+  return apiFetch<AdminUser[]>('/auth/api/users/admin/all', { headers: authHeader() })
 }

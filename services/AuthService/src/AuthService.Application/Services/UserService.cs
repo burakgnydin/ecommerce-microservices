@@ -25,6 +25,12 @@ public class UserService : IUserService
         return user.ToDto();
     }
 
+    public async Task<IReadOnlyList<UserResponseDto>> GetAllAsync(CancellationToken cancellationToken = default)
+    {
+        var users = await _userRepository.GetAllAsync(cancellationToken);
+        return users.Select(u => u.ToDto()).ToList();
+    }
+
     public async Task<UserResponseDto> UpdateAsync(Guid id, UserUpdateRequestDto dto, CancellationToken cancellationToken = default)
     {
         var user = await _userRepository.GetByIdAsync(id, cancellationToken);

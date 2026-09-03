@@ -41,6 +41,23 @@ public class UserServiceTests
     }
 
     [Fact]
+    public async Task GetAllAsync_ReturnsAllUsers()
+    {
+        var users = new[]
+        {
+            new User("Jane Doe", "jane@example.com", "hashed-password"),
+            new User("John Smith", "john@example.com", "hashed-password"),
+        };
+        _userRepository.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(users);
+
+        var result = await _sut.GetAllAsync();
+
+        Assert.Equal(2, result.Count);
+        Assert.Contains(result, u => u.Email == "jane@example.com");
+        Assert.Contains(result, u => u.Email == "john@example.com");
+    }
+
+    [Fact]
     public async Task UpdateAsync_UpdatesProfile_WhenEmailUnchanged()
     {
         var user = new User("Jane Doe", "jane@example.com", "hashed-password");

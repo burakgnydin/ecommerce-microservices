@@ -35,6 +35,19 @@ public class PaymentsController : ControllerBase
     }
 
     /// <summary>
+    /// Returns every payment across all users, most recent first. Restricted to admins.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    [HttpGet("admin/all")]
+    [Authorize(Roles = "Admin")]
+    [ProducesResponseType<IReadOnlyList<PaymentResponseDto>>(StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyList<PaymentResponseDto>>> GetAllForAdmin(CancellationToken cancellationToken)
+    {
+        var result = await _paymentService.GetAllAsync(cancellationToken);
+        return Ok(result);
+    }
+
+    /// <summary>
     /// Charges a card against one of the authenticated user's own orders.
     /// </summary>
     /// <param name="dto">Payment data.</param>

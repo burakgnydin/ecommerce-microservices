@@ -55,4 +55,10 @@ public class PaymentService : IPaymentService
         var payments = await _paymentRepository.GetByUserIdAsync(userId, cancellationToken);
         return payments.Select(p => p.ToDto()).ToList();
     }
+
+    public async Task<IReadOnlyList<PaymentResponseDto>> GetAllAsync(CancellationToken cancellationToken = default)
+    {
+        var payments = await _paymentRepository.GetAllAsync(cancellationToken);
+        return payments.Select(p => p.ToDto()).ToList();
+    }
 }

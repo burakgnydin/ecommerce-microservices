@@ -52,6 +52,12 @@ public class OrderService : IOrderService
         return orders.Select(o => o.ToDto()).ToList();
     }
 
+    public async Task<IReadOnlyList<OrderResponseDto>> GetAllAsync(CancellationToken cancellationToken = default)
+    {
+        var orders = await _orderRepository.GetAllAsync(cancellationToken);
+        return orders.Select(o => o.ToDto()).ToList();
+    }
+
     public async Task<OrderResponseDto> CancelAsync(Guid orderId, Guid userId, CancellationToken cancellationToken = default)
     {
         var order = await GetOwnedOrderAsync(orderId, userId, cancellationToken);

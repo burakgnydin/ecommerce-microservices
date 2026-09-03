@@ -20,4 +20,10 @@ public interface IPaymentService
     /// <param name="userId">Id of the authenticated caller, resolved from the JWT.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     Task<IReadOnlyList<PaymentResponseDto>> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Returns every payment across all users, most recent first. Restricted to admins.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    Task<IReadOnlyList<PaymentResponseDto>> GetAllAsync(CancellationToken cancellationToken = default);
 }

@@ -101,4 +101,19 @@ public class PaymentServiceTests
         Assert.Equal(payment.Id, single.Id);
         Assert.Equal("Succeeded", single.Status);
     }
+
+    [Fact]
+    public async Task GetAllAsync_ReturnsAllPayments()
+    {
+        var payments = new[]
+        {
+            Payment.Succeeded(Guid.NewGuid(), Guid.NewGuid(), 19.98m, "**** **** **** 1234"),
+            Payment.Failed(Guid.NewGuid(), Guid.NewGuid(), 9.99m, "**** **** **** 5678"),
+        };
+        _paymentRepository.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(payments);
+
+        var result = await _sut.GetAllAsync();
+
+        Assert.Equal(2, result.Count);
+    }
 }

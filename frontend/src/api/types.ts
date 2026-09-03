@@ -157,3 +157,11 @@ export interface Payment {
   maskedCardNumber: string
   createdAt: string
 }
+
+export interface AdminUser {
+  id: string
+  name: string
+  email: string
+  role: 'Customer' | 'Admin'
+  createdAt: string
+}

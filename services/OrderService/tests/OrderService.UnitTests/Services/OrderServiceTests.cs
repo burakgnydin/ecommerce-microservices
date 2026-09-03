@@ -67,6 +67,21 @@ public class OrderServiceTests
     }
 
     [Fact]
+    public async Task GetAllAsync_ReturnsAllOrders()
+    {
+        var orders = new[]
+        {
+            CreateOrder(Guid.NewGuid(), [new OrderItem(Guid.NewGuid(), "Widget", 9.99m, 1)]),
+            CreateOrder(Guid.NewGuid(), [new OrderItem(Guid.NewGuid(), "Gadget", 19.99m, 2)]),
+        };
+        _orderRepository.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(orders);
+
+        var result = await _sut.GetAllAsync();
+
+        Assert.Equal(2, result.Count);
+    }
+
+    [Fact]
     public async Task CreateAsync_PropagatesException_WhenProductCatalogIsUnavailable()
     {
         var productId = Guid.NewGuid();

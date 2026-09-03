@@ -38,6 +38,19 @@ public class UsersController : ControllerBase
     }
 
     /// <summary>
+    /// Returns every user, ordered by name. Restricted to admins.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    [HttpGet("admin/all")]
+    [Authorize(Roles = "Admin")]
+    [ProducesResponseType<IReadOnlyList<UserResponseDto>>(StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyList<UserResponseDto>>> GetAllForAdmin(CancellationToken cancellationToken)
+    {
+        var result = await _userService.GetAllAsync(cancellationToken);
+        return Ok(result);
+    }
+
+    /// <summary>
     /// Updates the profile of the currently authenticated user.
     /// </summary>
     /// <param name="dto">The updated name and email.</param>

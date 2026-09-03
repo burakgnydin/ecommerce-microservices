@@ -21,3 +21,7 @@ export function charge(request: ChargeRequest) {
 export function getMyPayments() {
   return apiFetch<Payment[]>('/payments/api/payments', { headers: authHeader() })
 }
+
+export function getAllPaymentsAdmin() {
+  return apiFetch<Payment[]>('/payments/api/payments/admin/all', { headers: authHeader() })
+}
