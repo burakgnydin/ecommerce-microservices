@@ -207,8 +207,8 @@ export default function CartPage() {
               {cart.items.map((item) => {
                 const product = products[item.productId]
                 return (
-                  <div key={item.productId} className="flex items-center gap-4 py-4">
-                    <Link to={`/products/${item.productId}`} className="flex flex-1 items-center gap-4">
+                  <div key={item.productId} className="flex flex-wrap items-center gap-4 py-4">
+                    <Link to={`/products/${item.productId}`} className="flex min-w-[160px] flex-1 items-center gap-4">
                       {product ? (
                         <ProductImage product={product} className="h-16 w-16 rounded-lg" iconClassName="h-6 w-6" />
                       ) : (
@@ -227,42 +227,44 @@ export default function CartPage() {
                       </div>
                     </Link>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            item.quantity > 1
+                              ? updateQuantity(item.productId, item.quantity - 1)
+                              : removeItem(item.productId)
+                          }
+                          className="flex h-7 w-7 items-center justify-center rounded-md border border-border text-foreground hover:bg-secondary"
+                          aria-label="Azalt"
+                        >
+                          <Minus className="h-3.5 w-3.5" />
+                        </button>
+                        <span className="w-6 text-center text-sm font-medium text-foreground">{item.quantity}</span>
+                        <button
+                          type="button"
+                          onClick={() => updateQuantity(item.productId, item.quantity + 1)}
+                          className="flex h-7 w-7 items-center justify-center rounded-md border border-border text-foreground hover:bg-secondary"
+                          aria-label="Artır"
+                        >
+                          <Plus className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+
+                      <p className="w-20 text-right font-medium text-foreground">
+                        {product ? formatPrice(product.price * item.quantity) : ''}
+                      </p>
+
                       <button
                         type="button"
-                        onClick={() =>
-                          item.quantity > 1
-                            ? updateQuantity(item.productId, item.quantity - 1)
-                            : removeItem(item.productId)
-                        }
-                        className="flex h-7 w-7 items-center justify-center rounded-md border border-border text-foreground hover:bg-secondary"
-                        aria-label="Azalt"
+                        onClick={() => removeItem(item.productId)}
+                        className="text-muted-foreground hover:text-destructive"
+                        aria-label="Kaldır"
                       >
-                        <Minus className="h-3.5 w-3.5" />
-                      </button>
-                      <span className="w-6 text-center text-sm font-medium text-foreground">{item.quantity}</span>
-                      <button
-                        type="button"
-                        onClick={() => updateQuantity(item.productId, item.quantity + 1)}
-                        className="flex h-7 w-7 items-center justify-center rounded-md border border-border text-foreground hover:bg-secondary"
-                        aria-label="Artır"
-                      >
-                        <Plus className="h-3.5 w-3.5" />
+                        <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
-
-                    <p className="w-24 text-right font-medium text-foreground">
-                      {product ? formatPrice(product.price * item.quantity) : ''}
-                    </p>
-
-                    <button
-                      type="button"
-                      onClick={() => removeItem(item.productId)}
-                      className="text-muted-foreground hover:text-destructive"
-                      aria-label="Kaldır"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
                   </div>
                 )
               })}

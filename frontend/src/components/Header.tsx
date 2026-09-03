@@ -273,11 +273,11 @@ export function Header() {
 
   return (
     <header className="relative z-10">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-5">
+      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-x-6 gap-y-3 px-4 py-5 sm:justify-between">
         <Link to="/" className="text-lg font-bold text-foreground">
           E-Ticaret
         </Link>
-        <nav className="flex items-center gap-6 text-sm font-medium">
+        <nav className="flex flex-wrap items-center justify-center gap-3 text-sm font-medium sm:gap-6">
           <Link to="/products" className="text-muted-foreground hover:text-foreground">
             Ürünler
           </Link>
