@@ -8,6 +8,7 @@ import { ProductMarquee } from '../components/ProductMarquee'
 import { ProductScreenMockup } from '../components/ProductScreenMockup'
 import { InteractiveHoverButton } from '../components/ui/InteractiveHoverButton'
 import { SearchBar } from '../components/ui/SearchBar'
+import { ShimmerText } from '../components/ui/ShimmerText'
 
 const fadeUp = {
   hidden: { opacity: 0, y: 16 },
@@ -46,7 +47,7 @@ export default function HomePage() {
           variants={fadeUp}
           className="font-serif text-4xl leading-tight text-foreground sm:text-5xl"
         >
-          Alışverişin <em className="italic">Sade</em> Hali
+          Alışverişin <ShimmerText className="italic">Sade</ShimmerText> Hali
         </motion.h1>
         <motion.p
           custom={1}

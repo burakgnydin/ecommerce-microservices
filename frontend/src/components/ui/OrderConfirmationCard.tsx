@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { CheckCircle2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
+import { ShimmerText } from '@/components/ui/ShimmerText'
 
 interface OrderConfirmationCardProps {
   orderId: string
@@ -64,7 +65,7 @@ export const OrderConfirmationCard: React.FC<OrderConfirmationCardProps> = ({
           <motion.div variants={itemVariants}>{icon}</motion.div>
 
           <motion.h2 variants={itemVariants} className="text-2xl font-semibold">
-            {title}
+            <ShimmerText>{title}</ShimmerText>
           </motion.h2>
 
           <motion.div variants={itemVariants} className="w-full space-y-4 pt-4">
