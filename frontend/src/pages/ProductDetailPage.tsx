@@ -1,14 +1,16 @@
 import { motion } from 'framer-motion'
-import { ChevronRight, PackageCheck, PackageX, Tag } from 'lucide-react'
+import { ChevronRight, Minus, PackageCheck, PackageX, Plus, Tag } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { useLocation, useNavigate, useParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { ApiError } from '../api/client'
 import { getProductById } from '../api/products'
 import type { Product } from '../api/types'
 import { Header } from '../components/Header'
 import { ProductDetailSkeleton } from '../components/ProductDetailSkeleton'
 import { ProductImage } from '../components/ProductImage'
+import { Button } from '../components/ui/Button'
 import { ShimmerButton } from '../components/ui/ShimmerButton'
+import { useCart } from '../context/CartContext'
 
 function formatPrice(price: number) {
   return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(price)
@@ -22,10 +24,34 @@ export default function ProductDetailPage() {
   const [product, setProduct] = useState<Product | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const { addItem } = useCart()
+  const [quantity, setQuantity] = useState(1)
+  const [isAdding, setIsAdding] = useState(false)
+  const [addError, setAddError] = useState<string | null>(null)
+  const [added, setAdded] = useState(false)
 
   function goBackToProducts() {
     if (canGoBack) navigate(-1)
     else navigate('/products')
+  }
+
+  async function handleAddToCart() {
+    if (!product) return
+    setAddError(null)
+    setAdded(false)
+    setIsAdding(true)
+    try {
+      await addItem(product.id, quantity)
+      setAdded(true)
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401) {
+        setAddError('login')
+      } else {
+        setAddError(err instanceof ApiError ? err.message : 'Sepete eklenemedi.')
+      }
+    } finally {
+      setIsAdding(false)
+    }
   }
 
   useEffect(() => {
@@ -117,6 +143,45 @@ export default function ProductDetailPage() {
               {product.description && (
                 <p className="mt-6 leading-relaxed text-muted-foreground">{product.description}</p>
               )}
+
+              {(product.stock > 0 || product.allowsPreOrder) && (
+                <div className="mt-6 flex items-center gap-3">
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                      className="flex h-9 w-9 items-center justify-center rounded-md border border-border text-foreground hover:bg-secondary"
+                      aria-label="Azalt"
+                    >
+                      <Minus className="h-4 w-4" />
+                    </button>
+                    <span className="w-6 text-center font-medium text-foreground">{quantity}</span>
+                    <button
+                      type="button"
+                      onClick={() => setQuantity((q) => q + 1)}
+                      className="flex h-9 w-9 items-center justify-center rounded-md border border-border text-foreground hover:bg-secondary"
+                      aria-label="Artır"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <Button type="button" onClick={handleAddToCart} disabled={isAdding}>
+                    {isAdding ? 'Ekleniyor...' : 'Sepete Ekle'}
+                  </Button>
+                </div>
+              )}
+
+              {added && <p className="mt-2 text-sm text-success">Sepete eklendi.</p>}
+              {addError === 'login' && (
+                <p className="mt-2 text-sm text-destructive">
+                  Sepete eklemek için{' '}
+                  <Link to="/login" className="underline">
+                    giriş yapmalısın
+                  </Link>
+                  .
+                </p>
+              )}
+              {addError && addError !== 'login' && <p className="mt-2 text-sm text-destructive">{addError}</p>}
 
               <ShimmerButton type="button" onClick={goBackToProducts} className="mt-8 px-4 py-1.5">
                 <span className="whitespace-pre-wrap text-center text-xs font-medium leading-none tracking-tight">

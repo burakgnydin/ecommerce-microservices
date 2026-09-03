@@ -48,3 +48,32 @@ export interface PagedResult<T> {
   totalCount: number
   totalPages: number
 }
+
+export interface CartItem {
+  productId: string
+  quantity: number
+}
+
+export interface Cart {
+  id: string
+  userId: string
+  items: CartItem[]
+  updatedAt: string
+}
+
+export interface OrderItem {
+  productId: string
+  productName: string
+  unitPrice: number
+  quantity: number
+  subtotal: number
+}
+
+export interface Order {
+  id: string
+  userId: string
+  status: 'Pending' | 'Paid' | 'Cancelled'
+  totalAmount: number
+  createdAt: string
+  items: OrderItem[]
+}

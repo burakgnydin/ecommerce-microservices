@@ -1,8 +1,10 @@
 import { AnimatePresence, motion } from 'framer-motion'
+import { ShoppingCart } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getCategories } from '../api/categories'
 import type { Category } from '../api/types'
+import { useCart } from '../context/CartContext'
 import { InteractiveHoverButton } from './ui/InteractiveHoverButton'
 
 function CategoriesDropdown() {
@@ -97,6 +99,21 @@ function AuthMenu() {
   )
 }
 
+function CartLink() {
+  const { itemCount } = useCart()
+
+  return (
+    <Link to="/cart" className="relative text-muted-foreground hover:text-foreground" aria-label="Sepetim">
+      <ShoppingCart className="h-5 w-5" />
+      {itemCount > 0 && (
+        <span className="absolute -right-2 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
+          {itemCount}
+        </span>
+      )}
+    </Link>
+  )
+}
+
 export function Header() {
   return (
     <header className="relative z-10">
@@ -109,6 +126,7 @@ export function Header() {
             Ürünler
           </Link>
           <CategoriesDropdown />
+          <CartLink />
           <AuthMenu />
         </nav>
       </div>
