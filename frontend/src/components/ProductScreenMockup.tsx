@@ -28,9 +28,12 @@ export function ProductScreenMockup({ products }: ProductScreenMockupProps) {
       transition={{ duration: 0.7, delay: 0.35, ease: [0.22, 1, 0.36, 1] }}
       className="relative mx-auto mt-14 w-full max-w-2xl"
     >
-      <span className="absolute -top-4 right-4 z-10 rounded-full bg-primary px-3 py-1 text-xs font-medium text-primary-foreground shadow-md">
+      <Link
+        to="/products"
+        className="absolute -top-4 right-4 z-10 rounded-full bg-primary px-3 py-1 text-xs font-medium text-primary-foreground shadow-md transition-colors hover:bg-primary-hover"
+      >
         Hemen incele →
-      </span>
+      </Link>
       <div className="rounded-2xl bg-foreground p-3 shadow-xl">
         <div className="mb-2.5 flex items-center gap-1.5 px-1">
           <span className="h-2.5 w-2.5 rounded-full bg-white/25" />

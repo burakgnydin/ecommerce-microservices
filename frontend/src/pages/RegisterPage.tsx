@@ -22,8 +22,9 @@ function FieldBox({ id, label, type = 'text', autoComplete, required, value, onC
   return (
     <label
       htmlFor={id}
-      className="flex h-14 items-center justify-between gap-4 rounded-[10px] border border-border bg-card px-5 text-base leading-none"
+      className="flex h-14 items-center gap-4 rounded-[10px] border border-border bg-card px-5 text-base leading-none"
     >
+      {showFloatingLabel && <span className="shrink-0 text-muted-foreground">{label}</span>}
       <input
         id={id}
         type={type}
@@ -36,7 +37,6 @@ function FieldBox({ id, label, type = 'text', autoComplete, required, value, onC
         onChange={(event) => onChange(event.target.value)}
         className="min-w-0 flex-1 truncate bg-transparent text-foreground outline-none"
       />
-      {showFloatingLabel && <span className="shrink-0 text-muted-foreground">{label}</span>}
     </label>
   )
 }
@@ -74,7 +74,32 @@ export default function RegisterPage() {
 
   return (
     <section className="min-h-screen bg-background p-3 text-foreground antialiased">
-      <div className="grid min-h-[calc(100vh-1.5rem)] gap-6 lg:grid-cols-[0.94fr_1.06fr]">
+      <div className="grid min-h-[calc(100vh-1.5rem)] gap-6 lg:grid-cols-[1.06fr_0.94fr]">
+        <div className="relative flex min-h-[720px] overflow-hidden rounded-md bg-primary p-8 text-primary-foreground sm:p-12 lg:min-h-0">
+          <GrainGradient
+            speed={1}
+            scale={1}
+            rotation={0}
+            offsetX={0}
+            offsetY={0}
+            softness={0.5}
+            intensity={0.5}
+            noise={0.25}
+            shape="corners"
+            colors={['#ffffff', '#3891ff', '#0a0a0a', '#3b82f6']}
+            colorBack="#00000000"
+            className="absolute inset-0 bg-primary"
+          />
+
+          <div className="relative z-10 flex h-full w-full flex-col justify-between">
+            <h2 className="max-w-[620px] pt-0 text-5xl font-medium tracking-[-0.05em] text-primary-foreground sm:text-6xl lg:pt-16 lg:text-[64px] lg:leading-[0.98] xl:text-[70px]">
+              Hızlı başla,
+              <br />
+              kolayca alışveriş yap
+            </h2>
+          </div>
+        </div>
+
         <div className="flex min-h-[760px] items-start rounded-md border border-border bg-card px-6 py-12 sm:px-10 lg:min-h-0 lg:px-14 lg:py-28 xl:px-20">
           <div className="mx-auto w-full max-w-[590px]">
             <div>
@@ -128,31 +153,6 @@ export default function RegisterPage() {
                 Giriş yap
               </Link>
             </p>
-          </div>
-        </div>
-
-        <div className="relative flex min-h-[720px] overflow-hidden rounded-md bg-primary p-8 text-primary-foreground sm:p-12 lg:min-h-0">
-          <GrainGradient
-            speed={1}
-            scale={1}
-            rotation={0}
-            offsetX={0}
-            offsetY={0}
-            softness={0.5}
-            intensity={0.5}
-            noise={0.25}
-            shape="corners"
-            colors={['#ffffff', '#3891ff', '#0a0a0a', '#3b82f6']}
-            colorBack="#00000000"
-            className="absolute inset-0 bg-primary"
-          />
-
-          <div className="relative z-10 flex h-full w-full flex-col justify-between">
-            <h2 className="max-w-[620px] pt-0 text-5xl font-medium tracking-[-0.05em] text-primary-foreground sm:text-6xl lg:pt-16 lg:text-[64px] lg:leading-[0.98] xl:text-[70px]">
-              Hızlı başla,
-              <br />
-              kolayca alışveriş yap
-            </h2>
           </div>
         </div>
       </div>
