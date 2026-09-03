@@ -1,14 +1,16 @@
 import { motion } from 'framer-motion'
 import { Minus, Plus, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { getProductById } from '../api/products'
 import { ApiError } from '../api/client'
-import type { Order, Product } from '../api/types'
+import type { Order, Payment, Product } from '../api/types'
+import { CardPaymentForm } from '../components/CardPaymentForm'
 import { Header } from '../components/Header'
 import { ProductImage } from '../components/ProductImage'
 import { Skeleton } from '../components/ui/Skeleton'
 import { Button } from '../components/ui/Button'
+import { OrderConfirmationCard } from '../components/ui/OrderConfirmationCard'
 import { getAccessToken } from '../lib/auth'
 import { useCart } from '../context/CartContext'
 
@@ -18,9 +20,11 @@ function formatPrice(price: number) {
 
 export default function CartPage() {
   const { cart, isLoading, error, updateQuantity, removeItem, checkout } = useCart()
+  const navigate = useNavigate()
   const [products, setProducts] = useState<Record<string, Product>>({})
   const [isEnriching, setIsEnriching] = useState(false)
   const [order, setOrder] = useState<Order | null>(null)
+  const [payment, setPayment] = useState<Payment | null>(null)
   const [checkoutError, setCheckoutError] = useState<string | null>(null)
   const [isCheckingOut, setIsCheckingOut] = useState(false)
 
@@ -56,11 +60,29 @@ export default function CartPage() {
     }
   }
 
+  if (order && payment) {
+    return (
+      <div className="min-h-screen">
+        <Header />
+        <main className="mx-auto flex max-w-2xl justify-center px-4 py-16">
+          <OrderConfirmationCard
+            orderId={payment.orderId}
+            paymentMethod={payment.maskedCardNumber}
+            dateTime={new Date(payment.createdAt).toLocaleString('tr-TR')}
+            totalAmount={formatPrice(payment.amount)}
+            buttonText="Alışverişe devam et"
+            onGoToAccount={() => navigate('/products')}
+          />
+        </main>
+      </div>
+    )
+  }
+
   if (order) {
     return (
       <div className="min-h-screen">
         <Header />
-        <main className="mx-auto max-w-2xl px-4 py-16 text-center">
+        <main className="mx-auto max-w-md px-4 py-16">
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
@@ -69,11 +91,10 @@ export default function CartPage() {
           >
             <h1 className="text-2xl font-semibold text-foreground">Siparişin oluşturuldu</h1>
             <p className="mt-2 text-sm text-muted-foreground">Sipariş No: {order.id}</p>
-            <p className="mt-1 text-sm text-muted-foreground">Durum: Beklemede</p>
             <p className="mt-4 text-lg font-bold text-foreground">{formatPrice(order.totalAmount)}</p>
-            <Link to="/products" className="mt-6 inline-block">
-              <Button>Alışverişe devam et</Button>
-            </Link>
+            <div className="mt-6">
+              <CardPaymentForm orderId={order.id} onSuccess={setPayment} />
+            </div>
           </motion.div>
         </main>
       </div>

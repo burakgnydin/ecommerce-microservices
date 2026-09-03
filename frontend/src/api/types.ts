@@ -77,3 +77,12 @@ export interface Order {
   createdAt: string
   items: OrderItem[]
 }
+
+export interface Payment {
+  id: string
+  orderId: string
+  status: 'Succeeded' | 'Failed'
+  amount: number
+  maskedCardNumber: string
+  createdAt: string
+}
