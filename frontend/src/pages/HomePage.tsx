@@ -47,7 +47,7 @@ export default function HomePage() {
           variants={fadeUp}
           className="font-serif text-4xl leading-tight text-foreground sm:text-5xl"
         >
-          Alışverişin <ShimmerText className="italic">Sade</ShimmerText> Hali
+          Alışverişin <ShimmerText className="font-serif italic">Sade</ShimmerText> Hali
         </motion.h1>
         <motion.p
           custom={1}

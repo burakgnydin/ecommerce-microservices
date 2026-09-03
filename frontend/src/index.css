@@ -90,8 +90,19 @@ h6 {
   animation: marquee 28s linear infinite;
 }
 
-.animate-marquee:hover {
-  animation-play-state: paused;
+@keyframes marquee-vertical {
+  from {
+    transform: translateY(-50%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.animate-marquee-vertical {
+  animation-name: marquee-vertical;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
 }
 
 @keyframes ripple {
