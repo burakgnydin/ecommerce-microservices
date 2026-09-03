@@ -6,7 +6,7 @@ import type { Product } from '../api/types'
 import { Header } from '../components/Header'
 import { ProductMarquee } from '../components/ProductMarquee'
 import { ProductScreenMockup } from '../components/ProductScreenMockup'
-import { Button } from '../components/ui/Button'
+import { InteractiveHoverButton } from '../components/ui/InteractiveHoverButton'
 import { SearchBar } from '../components/ui/SearchBar'
 
 const fadeUp = {
@@ -73,7 +73,7 @@ export default function HomePage() {
         </motion.div>
         <motion.div custom={3} initial="hidden" animate="visible" variants={fadeUp} className="mt-4">
           <Link to="/products">
-            <Button size="lg">Ürünleri Keşfet</Button>
+            <InteractiveHoverButton text="Ürünleri Keşfet" className="w-48 h-12 text-base" />
           </Link>
         </motion.div>
 

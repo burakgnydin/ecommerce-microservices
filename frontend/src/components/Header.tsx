@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getCategories } from '../api/categories'
 import type { Category } from '../api/types'
-import { Button } from './ui/Button'
+import { InteractiveHoverButton } from './ui/InteractiveHoverButton'
 
 function CategoriesDropdown() {
   const [isOpen, setIsOpen] = useState(false)
@@ -66,7 +66,7 @@ function AuthMenu() {
 
   return (
     <div className="relative" ref={containerRef}>
-      <Button onClick={() => setIsOpen((prev) => !prev)}>Hesabım</Button>
+      <InteractiveHoverButton text="Hesabım" onClick={() => setIsOpen((prev) => !prev)} />
       <AnimatePresence>
         {isOpen && (
           <motion.div
