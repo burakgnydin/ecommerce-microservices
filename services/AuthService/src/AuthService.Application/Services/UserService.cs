@@ -22,4 +22,22 @@ public class UserService : IUserService
 
         return user.ToDto();
     }
+
+    public async Task<UserResponseDto> UpdateAsync(Guid id, UserUpdateRequestDto dto, CancellationToken cancellationToken = default)
+    {
+        var user = await _userRepository.GetByIdAsync(id, cancellationToken);
+        if (user is null)
+            throw new NotFoundException($"User with id '{id}' was not found.");
+
+        if (!string.Equals(user.Email, dto.Email, StringComparison.Ordinal) &&
+            await _userRepository.ExistsByEmailAsync(dto.Email, cancellationToken))
+        {
+            throw new DuplicateEmailException(dto.Email);
+        }
+
+        user.UpdateProfile(dto.Name, dto.Email);
+        await _userRepository.UpdateAsync(user, cancellationToken);
+
+        return user.ToDto();
+    }
 }

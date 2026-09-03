@@ -14,3 +14,10 @@ export function login(dto: LoginRequest) {
     body: JSON.stringify(dto),
   })
 }
+
+export function logout(refreshToken: string) {
+  return apiFetch<void>('/auth/api/auth/logout', {
+    method: 'POST',
+    body: JSON.stringify({ refreshToken }),
+  })
+}

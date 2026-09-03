@@ -23,6 +23,11 @@ export interface UserResponse {
   createdAt: string
 }
 
+export interface UserUpdateRequest {
+  name: string
+  email: string
+}
+
 export interface Category {
   id: string
   name: string

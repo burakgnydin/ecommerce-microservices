@@ -36,4 +36,21 @@ public class UsersController : ControllerBase
         var result = await _userService.GetByIdAsync(userId, cancellationToken);
         return Ok(result);
     }
+
+    /// <summary>
+    /// Updates the profile of the currently authenticated user.
+    /// </summary>
+    /// <param name="dto">The updated name and email.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    [HttpPut("me")]
+    [ProducesResponseType<UserResponseDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<UserResponseDto>> UpdateCurrentUser(UserUpdateRequestDto dto, CancellationToken cancellationToken)
+    {
+        var userId = Guid.Parse(User.FindFirst(JwtRegisteredClaimNames.Sub)!.Value);
+        var result = await _userService.UpdateAsync(userId, dto, cancellationToken);
+        return Ok(result);
+    }
 }
