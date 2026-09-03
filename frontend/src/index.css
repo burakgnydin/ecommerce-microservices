@@ -93,3 +93,33 @@ h6 {
 .animate-marquee:hover {
   animation-play-state: paused;
 }
+
+@keyframes ripple {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(0.9);
+  }
+}
+
+.animate-ripple {
+  animation: ripple 3s ease-out infinite;
+}
+
+@keyframes orbit {
+  0% {
+    transform: rotate(calc(var(--angle, 0) * 1deg)) translateY(calc(var(--radius) * 1px)) rotate(calc(var(--angle, 0) * -1deg));
+  }
+  100% {
+    transform: rotate(calc(var(--angle, 0) * 1deg + 360deg)) translateY(calc(var(--radius) * 1px)) rotate(calc((var(--angle, 0) * -1deg) - 360deg));
+  }
+}
+
+.animate-orbit {
+  animation-name: orbit;
+  animation-duration: calc(var(--duration) * 1s);
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
