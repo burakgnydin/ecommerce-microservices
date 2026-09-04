@@ -18,7 +18,7 @@ function formatPrice(price: number) {
   return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(price)
 }
 
-function useCurrentUser() {
+export function useCurrentUser() {
   const [user, setUser] = useState<UserResponse | null>(null)
   const isLoggedIn = Boolean(getAccessToken())
 
@@ -272,8 +272,8 @@ export function Header() {
   const isAdmin = isLoggedIn && user?.role === 'Admin'
 
   return (
-    <header className="relative z-10">
-      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-x-6 gap-y-3 px-4 py-5 sm:justify-between">
+    <header className="relative z-[35]">
+      <div className="flex w-full flex-wrap items-center justify-center gap-x-6 gap-y-3 px-6 py-5 sm:justify-between">
         <Link to="/" className="text-lg font-bold text-foreground">
           E-Ticaret
         </Link>

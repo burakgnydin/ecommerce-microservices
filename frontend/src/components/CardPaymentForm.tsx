@@ -2,6 +2,7 @@ import { type FormEvent, useState } from 'react'
 import { ApiError } from '../api/client'
 import { charge } from '../api/payments'
 import type { Payment } from '../api/types'
+import { useToast } from '../context/ToastContext'
 import { Button } from './ui/Button'
 
 interface CardPaymentFormProps {
@@ -19,6 +20,7 @@ export function CardPaymentForm({ orderId, onSuccess }: CardPaymentFormProps) {
   const [cvv, setCvv] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const { showError } = useToast()
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
@@ -34,7 +36,9 @@ export function CardPaymentForm({ orderId, onSuccess }: CardPaymentFormProps) {
       })
       onSuccess(payment)
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Ödeme alınamadı.')
+      const message = err instanceof ApiError ? err.message : 'Ödeme alınamadı.'
+      setError(message)
+      showError('Ödeme başarısız', message)
     } finally {
       setIsSubmitting(false)
     }

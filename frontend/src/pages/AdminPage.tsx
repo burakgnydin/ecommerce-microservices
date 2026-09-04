@@ -12,7 +12,6 @@ import { ProductForm } from '../components/admin/ProductForm'
 import { Header } from '../components/Header'
 import { ProductImage } from '../components/ProductImage'
 import { AdminOverviewSlider } from '../components/ui/AdminOverviewSlider'
-import { Banner } from '../components/ui/Banner'
 import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
 import { ConfirmModal } from '../components/ui/ConfirmModal'
@@ -264,7 +263,6 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen">
-      <Banner id="admin-overview" variant="rainbow" message="🎉 Yönetim paneli geliştirme aşamasında" height="2.5rem" />
       <Header />
       <main className="mx-auto max-w-5xl px-4 py-10">
         <h1 className="text-3xl font-bold tracking-tight text-foreground">Yönetim Paneli</h1>
@@ -283,7 +281,7 @@ export default function AdminPage() {
 
         {!loadError && !isLoadingData && (
           <div className="mt-8 grid gap-6">
-            <Card className="p-6">
+            <Card id="admin-section-categories" className="p-6">
               <h2 className="text-lg font-semibold text-foreground">Kategoriler</h2>
 
               <ul className="mt-4 divide-y divide-border">
@@ -347,7 +345,7 @@ export default function AdminPage() {
               {categoryError && <p className="mt-3 text-sm text-destructive">{categoryError}</p>}
             </Card>
 
-            <Card className="p-6">
+            <Card id="admin-section-products" className="p-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-foreground">Ürünler</h2>
                 {productFormMode === null && (
@@ -417,7 +415,7 @@ export default function AdminPage() {
               </ul>
             </Card>
 
-            <Card className="p-6">
+            <Card id="admin-section-orders" className="p-6">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <h2 className="text-lg font-semibold text-foreground">Sipariş ve Ödeme Genel Bakışı</h2>
                 <div className="flex flex-wrap gap-2">

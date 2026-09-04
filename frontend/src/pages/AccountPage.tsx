@@ -168,6 +168,12 @@ export default function AccountPage() {
     event.preventDefault()
     setFormError(null)
     setSuccessMessage(null)
+
+    if (user && name === user.name && email === user.email) {
+      setSuccessMessage('Bilgilerin güncellendi.')
+      return
+    }
+
     setIsSubmitting(true)
     try {
       const result = await updateMe({ name, email })

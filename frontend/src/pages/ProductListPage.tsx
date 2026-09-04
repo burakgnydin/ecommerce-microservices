@@ -4,7 +4,7 @@ import { useSearchParams } from 'react-router-dom'
 import { getProducts } from '../api/products'
 import { ApiError } from '../api/client'
 import type { PagedResult, Product } from '../api/types'
-import { Header } from '../components/Header'
+import { Header, useCurrentUser } from '../components/Header'
 import { ProductCard } from '../components/ProductCard'
 import { ProductCardSkeleton } from '../components/ProductCardSkeleton'
 import { Button } from '../components/ui/Button'
@@ -13,6 +13,8 @@ import { SearchBar } from '../components/ui/SearchBar'
 const PAGE_SIZE = 20
 
 export default function ProductListPage() {
+  const { user } = useCurrentUser()
+  const isAdmin = user?.role === 'Admin'
   const [searchParams, setSearchParams] = useSearchParams()
   const categoryId = searchParams.get('categoryId') ?? undefined
   const categoryName = searchParams.get('categoryName') ?? undefined
@@ -105,7 +107,7 @@ export default function ProductListPage() {
                 className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4"
               >
                 {result.items.map((product) => (
-                  <ProductCard key={product.id} product={product} />
+                  <ProductCard key={product.id} product={product} isAdmin={isAdmin} />
                 ))}
               </motion.div>
             </AnimatePresence>

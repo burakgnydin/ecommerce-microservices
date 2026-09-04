@@ -7,7 +7,7 @@ export function Highlight({ children, className }: { children: ReactNode; classN
     <motion.span
       initial={{ backgroundSize: '0% 100%' }}
       animate={{ backgroundSize: '100% 100%' }}
-      transition={{ duration: 2, ease: 'linear', delay: 0.5 }}
+      transition={{ duration: 2.5, ease: 'linear', delay: 0.5, repeat: Infinity, repeatType: 'loop', repeatDelay: 2 }}
       style={{ backgroundRepeat: 'no-repeat', backgroundPosition: 'left center', display: 'inline' }}
       className={cn('relative inline-block rounded-lg bg-gradient-to-r from-blue-200 to-blue-300 px-1 pb-1', className)}
     >

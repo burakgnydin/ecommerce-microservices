@@ -1,5 +1,5 @@
 import { motion, useReducedMotion } from 'framer-motion'
-import { ArrowRight, Minus, Plus } from 'lucide-react'
+import { Minus, Plus } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ApiError } from '../api/client'
@@ -11,19 +11,16 @@ import { ProductImage } from './ProductImage'
 
 interface ProductCardProps {
   product: Product
+  isAdmin?: boolean
 }
 
 function formatPrice(price: number) {
   return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(price)
 }
 
-const overlayVariants = {
-  rest: { y: '100%', opacity: 0 },
-  hover: {
-    y: '0%',
-    opacity: 1,
-    transition: { type: 'spring' as const, stiffness: 400, damping: 30 },
-  },
+const cardVariants = {
+  rest: { y: 0 },
+  hover: { y: -6 },
 }
 
 const imageVariants = {
@@ -31,7 +28,7 @@ const imageVariants = {
   hover: { scale: 1.08 },
 }
 
-export function ProductCard({ product }: ProductCardProps) {
+export function ProductCard({ product, isAdmin = false }: ProductCardProps) {
   const shouldReduceMotion = useReducedMotion()
   const isOutOfStock = product.stock <= 0 && !product.allowsPreOrder
   const isPreOrder = product.stock <= 0 && product.allowsPreOrder
@@ -65,6 +62,8 @@ export function ProductCard({ product }: ProductCardProps) {
       <motion.div
         initial="rest"
         whileHover="hover"
+        variants={shouldReduceMotion ? undefined : cardVariants}
+        transition={{ type: 'spring', stiffness: 300, damping: 25 }}
         className="group relative flex h-full flex-col overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-sm transition-shadow hover:shadow-lg"
         whileTap={{ scale: 0.99 }}
       >
@@ -100,20 +99,7 @@ export function ProductCard({ product }: ProductCardProps) {
           </div>
         </div>
 
-        {product.description && (
-          <motion.div
-            variants={shouldReduceMotion ? undefined : overlayVariants}
-            className="absolute inset-0 flex flex-col justify-end bg-background/95 p-5 backdrop-blur-sm"
-          >
-            <p className="text-sm leading-relaxed text-muted-foreground">{product.description}</p>
-            <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-primary">
-              Detayları gör
-              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-            </span>
-          </motion.div>
-        )}
-
-        {(product.stock > 0 || product.allowsPreOrder) && (
+        {!isAdmin && (product.stock > 0 || product.allowsPreOrder) && (
           <div className="border-t border-border bg-card p-3">
             <div className="flex items-center gap-2">
               <button

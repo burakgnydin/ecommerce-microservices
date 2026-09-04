@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react'
 import { CreditCard, ListOrdered, Package, Tags } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn, smoothScrollToId } from '@/lib/utils'
 
 const overviewSlides = [
-  { id: 1, title: 'Ürünler', description: 'Ürün kataloğunu ekle, düzenle ve yönet.', icon: Package },
-  { id: 2, title: 'Kategoriler', description: 'Ürünleri kategorilere ayırarak düzenle.', icon: Tags },
-  { id: 3, title: 'Siparişler', description: 'Gelen siparişleri takip et ve yönet.', icon: ListOrdered },
-  { id: 4, title: 'Ödemeler', description: 'Ödeme durumlarına genel bakış.', icon: CreditCard },
+  { id: 1, title: 'Ürünler', description: 'Ürün kataloğunu ekle, düzenle ve yönet.', icon: Package, sectionId: 'admin-section-products' },
+  { id: 2, title: 'Kategoriler', description: 'Ürünleri kategorilere ayırarak düzenle.', icon: Tags, sectionId: 'admin-section-categories' },
+  { id: 3, title: 'Siparişler', description: 'Gelen siparişleri takip et ve yönet.', icon: ListOrdered, sectionId: 'admin-section-orders' },
+  { id: 4, title: 'Ödemeler', description: 'Ödeme durumlarına genel bakış.', icon: CreditCard, sectionId: 'admin-section-orders' },
 ]
 
 export function AdminOverviewSlider() {
@@ -29,10 +29,15 @@ export function AdminOverviewSlider() {
             const Icon = slide.icon
 
             return (
-              <div
+              <button
                 key={slide.id}
+                type="button"
+                onClick={() => {
+                  setCurrentSlide(index)
+                  smoothScrollToId(slide.sectionId)
+                }}
                 className={cn(
-                  'absolute w-72 rounded-2xl border bg-card p-6 transition-all duration-500 ease-in-out',
+                  'absolute w-72 cursor-pointer rounded-2xl border bg-card p-6 text-left transition-all duration-500 ease-in-out hover:border-primary/40',
                   isActive ? 'border-border shadow-lg' : 'border-border/60 shadow-sm',
                 )}
                 style={{
@@ -46,7 +51,7 @@ export function AdminOverviewSlider() {
                 </div>
                 <h3 className="mt-4 text-lg font-semibold text-foreground">{slide.title}</h3>
                 <p className="mt-1 text-sm text-muted-foreground">{slide.description}</p>
-              </div>
+              </button>
             )
           })}
         </div>
