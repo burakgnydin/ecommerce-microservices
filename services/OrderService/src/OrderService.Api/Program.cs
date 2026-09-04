@@ -4,6 +4,8 @@ using OrderService.Api.ExceptionHandling;
 using OrderService.Application.DependencyInjection;
 using OrderService.Application.Validators;
 using OrderService.Infrastructure.DependencyInjection;
+using OrderService.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 using SharpGrip.FluentValidation.AutoValidation.Mvc.Extensions;
 
@@ -36,6 +38,12 @@ builder.Services.AddProblemDetails(options =>
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<OrderDbContext>();
+    await dbContext.Database.MigrateAsync();
+}
 
 // Configure the HTTP request pipeline.
 

@@ -4,6 +4,8 @@ using PaymentService.Api.ExceptionHandling;
 using PaymentService.Application.DependencyInjection;
 using PaymentService.Application.Validators;
 using PaymentService.Infrastructure.DependencyInjection;
+using PaymentService.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 using SharpGrip.FluentValidation.AutoValidation.Mvc.Extensions;
 
@@ -36,6 +38,12 @@ builder.Services.AddProblemDetails(options =>
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<PaymentDbContext>();
+    await dbContext.Database.MigrateAsync();
+}
 
 // Configure the HTTP request pipeline.
 
