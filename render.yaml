@@ -78,10 +78,7 @@ services:
           property: connectionString
       - fromGroup: jwt-public-key
       - key: Services__ProductService__BaseUrl
-        fromService:
-          type: web
-          name: product-service
-          property: hostport
+        sync: false # Free plan services can't receive private network traffic; set to product-service's public onrender.com URL after its first deploy
 
   - type: web
     name: payment-service
@@ -98,17 +95,11 @@ services:
           property: connectionString
       - fromGroup: jwt-public-key
       - key: Services__OrderService__BaseUrl
-        fromService:
-          type: web
-          name: order-service
-          property: hostport
+        sync: false # Free plan services can't receive private network traffic; set to order-service's public onrender.com URL after its first deploy
       - key: Services__OrderService__ServiceToken
         sync: false
       - key: Services__NotificationService__BaseUrl
-        fromService:
-          type: web
-          name: notification-service
-          property: hostport
+        sync: false # Free plan services can't receive private network traffic; set to notification-service's public onrender.com URL after its first deploy
 
   - type: web
     name: notification-service
@@ -132,31 +123,19 @@ services:
         value: 8080
       - key: Cors__AllowedOrigins__0
         sync: false # set to the frontend's public onrender.com URL after its first deploy
+      # Free plan services can't receive private network traffic, so fromService/hostport
+      # doesn't work here; each address must be set to the target service's public
+      # onrender.com URL after its first deploy.
       - key: ReverseProxy__Clusters__auth-cluster__Destinations__destination1__Address
-        fromService:
-          type: web
-          name: auth-service
-          property: hostport
+        sync: false
       - key: ReverseProxy__Clusters__products-cluster__Destinations__destination1__Address
-        fromService:
-          type: web
-          name: product-service
-          property: hostport
+        sync: false
       - key: ReverseProxy__Clusters__orders-cluster__Destinations__destination1__Address
-        fromService:
-          type: web
-          name: order-service
-          property: hostport
+        sync: false
       - key: ReverseProxy__Clusters__payments-cluster__Destinations__destination1__Address
-        fromService:
-          type: web
-          name: payment-service
-          property: hostport
+        sync: false
       - key: ReverseProxy__Clusters__notifications-cluster__Destinations__destination1__Address
-        fromService:
-          type: web
-          name: notification-service
-          property: hostport
+        sync: false
 
   - type: web
     name: frontend
