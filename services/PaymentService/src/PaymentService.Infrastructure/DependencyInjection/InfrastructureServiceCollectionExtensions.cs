@@ -17,7 +17,7 @@ public static class InfrastructureServiceCollectionExtensions
     public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddDbContext<PaymentDbContext>(options =>
-            options.UseNpgsql(configuration.GetConnectionString("PaymentDb")));
+            options.UseNpgsql(NpgsqlConnectionStringHelper.Normalize(configuration.GetConnectionString("PaymentDb"))));
 
         services.AddScoped<IPaymentRepository, PaymentRepository>();
 
@@ -25,15 +25,15 @@ public static class InfrastructureServiceCollectionExtensions
 
         services.AddHttpClient<IOrderClient, OrderClient>(client =>
             {
-                client.BaseAddress = new Uri(configuration["Services:OrderService:BaseUrl"]
-                    ?? throw new InvalidOperationException("Services:OrderService:BaseUrl is not configured."));
+                client.BaseAddress = new Uri(EnsureHttpScheme(configuration["Services:OrderService:BaseUrl"]
+                    ?? throw new InvalidOperationException("Services:OrderService:BaseUrl is not configured.")));
             })
             .AddStandardResilienceHandler();
 
         services.AddHttpClient<INotificationClient, NotificationClient>(client =>
             {
-                client.BaseAddress = new Uri(configuration["Services:NotificationService:BaseUrl"]
-                    ?? throw new InvalidOperationException("Services:NotificationService:BaseUrl is not configured."));
+                client.BaseAddress = new Uri(EnsureHttpScheme(configuration["Services:NotificationService:BaseUrl"]
+                    ?? throw new InvalidOperationException("Services:NotificationService:BaseUrl is not configured.")));
             })
             .AddStandardResilienceHandler();
 
@@ -60,4 +60,9 @@ public static class InfrastructureServiceCollectionExtensions
 
         return services;
     }
+
+    // Render's private-network service references (fromService/hostport) resolve to "host:port"
+    // with no scheme; local/docker-compose config already includes "http://".
+    private static string EnsureHttpScheme(string baseUrl) =>
+        baseUrl.Contains("://") ? baseUrl : $"http://{baseUrl}";
 }

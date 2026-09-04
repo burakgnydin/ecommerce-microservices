@@ -2,6 +2,22 @@ const string FrontendCorsPolicy = "Frontend";
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Render's private-network service references (fromService/hostport) resolve to "host:port"
+// with no scheme, but YARP's cluster Address needs a full URI. Local/docker-compose config
+// already includes "http://", so those are left untouched.
+var reverseProxyOverrides = new Dictionary<string, string?>();
+foreach (var destination in builder.Configuration.GetSection("ReverseProxy:Clusters").GetChildren()
+             .SelectMany(cluster => cluster.GetSection("Destinations").GetChildren()))
+{
+    var addressKey = $"{destination.Path}:Address";
+    var address = builder.Configuration[addressKey];
+    if (address is not null && !address.Contains("://"))
+    {
+        reverseProxyOverrides[addressKey] = $"http://{address}";
+    }
+}
+builder.Configuration.AddInMemoryCollection(reverseProxyOverrides);
+
 builder.Services.AddReverseProxy()
     .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
 
