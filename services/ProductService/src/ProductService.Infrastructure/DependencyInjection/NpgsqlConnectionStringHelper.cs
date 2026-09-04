@@ -18,7 +18,10 @@ public static class NpgsqlConnectionStringHelper
 
         var uri = new Uri(connectionString);
         var userInfo = uri.UserInfo.Split(':', 2);
-        return $"Host={uri.Host};Port={uri.Port};Database={uri.AbsolutePath.TrimStart('/')};" +
+        // Uri.Port is -1 when the URI omits an explicit port, since "postgres" has no
+        // built-in default port in System.Uri's scheme table.
+        var port = uri.Port == -1 ? 5432 : uri.Port;
+        return $"Host={uri.Host};Port={port};Database={uri.AbsolutePath.TrimStart('/')};" +
                $"Username={userInfo[0]};Password={userInfo[1]};SSL Mode=Require;Trust Server Certificate=true";
     }
 }
