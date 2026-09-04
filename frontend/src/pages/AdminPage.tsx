@@ -17,6 +17,7 @@ import { Card } from '../components/ui/Card'
 import { ConfirmModal } from '../components/ui/ConfirmModal'
 import { Skeleton } from '../components/ui/Skeleton'
 import { getAccessToken } from '../lib/auth'
+import { smoothScrollToId } from '../lib/utils'
 
 const inputClasses =
   'h-10 w-full rounded-md border border-border bg-card px-3 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring'
@@ -396,6 +397,7 @@ export default function AdminPage() {
                         setProductError(null)
                         setEditingProduct(product)
                         setProductFormMode('edit')
+                        smoothScrollToId('admin-section-products')
                       }}
                       className="text-muted-foreground hover:text-foreground"
                       aria-label="Düzenle"
