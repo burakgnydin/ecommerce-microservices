@@ -8,8 +8,9 @@ import { getProductById } from '../api/products'
 import type { Category, Product, UserResponse } from '../api/types'
 import { getMe } from '../api/users'
 import { useCart } from '../context/CartContext'
-import { clearTokens, getAccessToken, getRefreshToken } from '../lib/auth'
+import { getAccessToken, setAccessToken } from '../lib/auth'
 import { Button } from './ui/Button'
+import { ConfirmModal } from './ui/ConfirmModal'
 import { ProductImage } from './ProductImage'
 import { InteractiveHoverButton } from './ui/InteractiveHoverButton'
 import { Skeleton } from './ui/Skeleton'
@@ -18,7 +19,7 @@ function formatPrice(price: number) {
   return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(price)
 }
 
-function useCurrentUser() {
+export function useCurrentUser() {
   const [user, setUser] = useState<UserResponse | null>(null)
   const isLoggedIn = Boolean(getAccessToken())
 
@@ -82,8 +83,10 @@ function CategoriesDropdown() {
 
 function AuthMenu({ user, isLoggedIn }: { user: UserResponse | null; isLoggedIn: boolean }) {
   const [isOpen, setIsOpen] = useState(false)
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const navigate = useNavigate()
+  const { clearCart } = useCart()
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -101,13 +104,14 @@ function AuthMenu({ user, isLoggedIn }: { user: UserResponse | null; isLoggedIn:
     const buttonText = isAdmin ? 'Panel' : 'Hesabım'
 
     async function handleLogout() {
-      const refreshToken = getRefreshToken()
       try {
-        if (refreshToken) await logout(refreshToken)
+        await logout()
       } catch {
         // ignore - clear local session regardless
       }
-      clearTokens()
+      setAccessToken(null)
+      clearCart()
+      setShowLogoutConfirm(false)
       setIsOpen(false)
       navigate('/')
     }
@@ -133,7 +137,7 @@ function AuthMenu({ user, isLoggedIn }: { user: UserResponse | null; isLoggedIn:
               </Link>
               <button
                 type="button"
-                onClick={handleLogout}
+                onClick={() => setShowLogoutConfirm(true)}
                 className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-muted-foreground hover:bg-primary/10 hover:text-foreground"
               >
                 <LogOut className="h-4 w-4" /> Çıkış yap
@@ -141,6 +145,16 @@ function AuthMenu({ user, isLoggedIn }: { user: UserResponse | null; isLoggedIn:
             </motion.div>
           )}
         </AnimatePresence>
+
+        <ConfirmModal
+          isOpen={showLogoutConfirm}
+          title="Çıkış yap"
+          message="Çıkış yapmak istediğine emin misin?"
+          confirmText="Çıkış yap"
+          isDestructive
+          onConfirm={handleLogout}
+          onCancel={() => setShowLogoutConfirm(false)}
+        />
       </div>
     )
   }
@@ -272,8 +286,8 @@ export function Header() {
   const isAdmin = isLoggedIn && user?.role === 'Admin'
 
   return (
-    <header className="relative z-10">
-      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-x-6 gap-y-3 px-4 py-5 sm:justify-between">
+    <header className="relative z-[35]">
+      <div className="flex w-full flex-wrap items-center justify-center gap-x-6 gap-y-3 px-6 py-5 sm:justify-between">
         <Link to="/" className="text-lg font-bold text-foreground">
           E-Ticaret
         </Link>

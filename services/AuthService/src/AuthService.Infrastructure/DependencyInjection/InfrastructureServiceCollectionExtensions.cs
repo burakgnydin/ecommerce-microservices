@@ -16,7 +16,7 @@ public static class InfrastructureServiceCollectionExtensions
     public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddDbContext<AuthDbContext>(options =>
-            options.UseNpgsql(configuration.GetConnectionString("AuthDb")));
+            options.UseNpgsql(NpgsqlConnectionStringHelper.Normalize(configuration.GetConnectionString("AuthDb"))));
 
         var jwtOptions = configuration.GetSection("Jwt").Get<JwtOptions>() ?? new JwtOptions();
         services.Configure<JwtOptions>(configuration.GetSection("Jwt"));

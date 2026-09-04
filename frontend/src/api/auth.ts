@@ -15,9 +15,14 @@ export function login(dto: LoginRequest) {
   })
 }
 
-export function logout(refreshToken: string) {
+export function refresh() {
+  return apiFetch<LoginResponse>('/auth/api/auth/refresh', {
+    method: 'POST',
+  })
+}
+
+export function logout() {
   return apiFetch<void>('/auth/api/auth/logout', {
     method: 'POST',
-    body: JSON.stringify({ refreshToken }),
   })
 }

@@ -3,7 +3,7 @@ import { motion, type MotionValue, useScroll, useTransform } from 'framer-motion
 
 export function ContainerScroll({ titleComponent, children }: { titleComponent: React.ReactNode; children: React.ReactNode }) {
   const containerRef = useRef<HTMLDivElement>(null)
-  const { scrollYProgress } = useScroll({ target: containerRef })
+  const { scrollYProgress } = useScroll({ target: containerRef, offset: ['start end', 'end start'] })
   const [isMobile, setIsMobile] = useState(false)
 
   useEffect(() => {

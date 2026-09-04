@@ -1,0 +1,168 @@
+databases:
+  - name: auth-db
+    plan: free
+    databaseName: auth_service_db
+    user: auth_service_user
+
+  - name: product-db
+    plan: free
+    databaseName: product_service_db
+    user: product_service_user
+
+  - name: order-db
+    plan: free
+    databaseName: order_service_db
+    user: order_service_user
+
+  - name: payment-db
+    plan: free
+    databaseName: payment_service_db
+    user: payment_service_user
+
+envVarGroups:
+  # Only the public key is shared: it's safe for every JWT-verifying service to hold, unlike
+  # the private key, which only auth-service (the token issuer) needs.
+  - name: jwt-public-key
+    envVars:
+      - key: Jwt__PublicKeyPem
+        sync: false
+
+services:
+  - type: web
+    name: auth-service
+    runtime: docker
+    plan: free
+    dockerfilePath: ./services/AuthService/Dockerfile
+    dockerContext: ./services/AuthService
+    envVars:
+      - key: PORT
+        value: 8080
+      - key: ConnectionStrings__AuthDb
+        fromDatabase:
+          name: auth-db
+          property: connectionString
+      - key: Jwt__PrivateKeyPem
+        sync: false
+      - key: SeedAdmin__Email
+        sync: false
+      - key: SeedAdmin__Password
+        sync: false
+
+  - type: web
+    name: product-service
+    runtime: docker
+    plan: free
+    dockerfilePath: ./services/ProductService/Dockerfile
+    dockerContext: ./services/ProductService
+    envVars:
+      - key: PORT
+        value: 8080
+      - key: ConnectionStrings__ProductDb
+        fromDatabase:
+          name: product-db
+          property: connectionString
+      - fromGroup: jwt-public-key
+
+  - type: web
+    name: order-service
+    runtime: docker
+    plan: free
+    dockerfilePath: ./services/OrderService/Dockerfile
+    dockerContext: ./services/OrderService
+    envVars:
+      - key: PORT
+        value: 8080
+      - key: ConnectionStrings__OrderDb
+        fromDatabase:
+          name: order-db
+          property: connectionString
+      - fromGroup: jwt-public-key
+      - key: Services__ProductService__BaseUrl
+        fromService:
+          type: web
+          name: product-service
+          property: hostport
+
+  - type: web
+    name: payment-service
+    runtime: docker
+    plan: free
+    dockerfilePath: ./services/PaymentService/Dockerfile
+    dockerContext: ./services/PaymentService
+    envVars:
+      - key: PORT
+        value: 8080
+      - key: ConnectionStrings__PaymentDb
+        fromDatabase:
+          name: payment-db
+          property: connectionString
+      - fromGroup: jwt-public-key
+      - key: Services__OrderService__BaseUrl
+        fromService:
+          type: web
+          name: order-service
+          property: hostport
+      - key: Services__OrderService__ServiceToken
+        sync: false
+      - key: Services__NotificationService__BaseUrl
+        fromService:
+          type: web
+          name: notification-service
+          property: hostport
+
+  - type: web
+    name: notification-service
+    runtime: docker
+    plan: free
+    dockerfilePath: ./services/NotificationService/Dockerfile
+    dockerContext: ./services/NotificationService
+    envVars:
+      - key: PORT
+        value: 8080
+      - fromGroup: jwt-public-key
+
+  - type: web
+    name: api-gateway
+    runtime: docker
+    plan: free
+    dockerfilePath: ./services/ApiGateway/Dockerfile
+    dockerContext: ./services/ApiGateway
+    envVars:
+      - key: PORT
+        value: 8080
+      - key: Cors__AllowedOrigins__0
+        sync: false # set to the frontend's public onrender.com URL after its first deploy
+      - key: ReverseProxy__Clusters__auth-cluster__Destinations__destination1__Address
+        fromService:
+          type: web
+          name: auth-service
+          property: hostport
+      - key: ReverseProxy__Clusters__products-cluster__Destinations__destination1__Address
+        fromService:
+          type: web
+          name: product-service
+          property: hostport
+      - key: ReverseProxy__Clusters__orders-cluster__Destinations__destination1__Address
+        fromService:
+          type: web
+          name: order-service
+          property: hostport
+      - key: ReverseProxy__Clusters__payments-cluster__Destinations__destination1__Address
+        fromService:
+          type: web
+          name: payment-service
+          property: hostport
+      - key: ReverseProxy__Clusters__notifications-cluster__Destinations__destination1__Address
+        fromService:
+          type: web
+          name: notification-service
+          property: hostport
+
+  - type: web
+    name: frontend
+    runtime: static
+    buildCommand: cd frontend && npm install && npm run build
+    staticPublishPath: ./frontend/dist
+    envVars:
+      - key: VITE_API_BASE_URL
+        sync: false # set to api-gateway's public onrender.com URL after its first deploy, then redeploy this service

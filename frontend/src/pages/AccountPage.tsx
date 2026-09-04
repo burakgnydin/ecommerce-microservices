@@ -14,7 +14,7 @@ import { Card } from '../components/ui/Card'
 import { ConfirmModal } from '../components/ui/ConfirmModal'
 import { OrderTracking, type OrderTrackingStep } from '../components/ui/OrderTracking'
 import { Skeleton } from '../components/ui/Skeleton'
-import { clearTokens, getAccessToken, getRefreshToken } from '../lib/auth'
+import { getAccessToken, setAccessToken } from '../lib/auth'
 
 const inputClasses =
   'h-11 w-full rounded-md border border-border bg-card px-3 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring'
@@ -168,6 +168,12 @@ export default function AccountPage() {
     event.preventDefault()
     setFormError(null)
     setSuccessMessage(null)
+
+    if (user && name === user.name && email === user.email) {
+      setSuccessMessage('Bilgilerin güncellendi.')
+      return
+    }
+
     setIsSubmitting(true)
     try {
       const result = await updateMe({ name, email })
@@ -207,13 +213,12 @@ export default function AccountPage() {
   }
 
   async function handleLogout() {
-    const refreshToken = getRefreshToken()
     try {
-      if (refreshToken) await logout(refreshToken)
+      await logout()
     } catch {
       // ignore - clear local session regardless
     }
-    clearTokens()
+    setAccessToken(null)
     navigate('/')
   }
 

@@ -5,7 +5,7 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { ApiError } from '../api/client'
 import { getProductById } from '../api/products'
 import type { Product } from '../api/types'
-import { Header } from '../components/Header'
+import { Header, useCurrentUser } from '../components/Header'
 import { ProductDetailSkeleton } from '../components/ProductDetailSkeleton'
 import { ProductImage } from '../components/ProductImage'
 import { AuthPrompt } from '../components/ui/AuthPrompt'
@@ -18,6 +18,8 @@ function formatPrice(price: number) {
 }
 
 export default function ProductDetailPage() {
+  const { user } = useCurrentUser()
+  const isAdmin = user?.role === 'Admin'
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const location = useLocation()
@@ -145,7 +147,7 @@ export default function ProductDetailPage() {
                 <p className="mt-6 leading-relaxed text-muted-foreground">{product.description}</p>
               )}
 
-              {(product.stock > 0 || product.allowsPreOrder) && (
+              {!isAdmin && (product.stock > 0 || product.allowsPreOrder) && (
                 <div className="mt-6 flex items-center gap-3">
                   <div className="flex items-center gap-2">
                     <button
@@ -172,11 +174,11 @@ export default function ProductDetailPage() {
                 </div>
               )}
 
-              {added && <p className="mt-2 text-sm text-success">Sepete eklendi.</p>}
-              {addError === 'login' && (
+              {!isAdmin && added && <p className="mt-2 text-sm text-success">Sepete eklendi.</p>}
+              {!isAdmin && addError === 'login' && (
                 <AuthPrompt variant="inline" className="mt-3" message="Sepete eklemek için giriş yapmalısın." />
               )}
-              {addError && addError !== 'login' && <p className="mt-2 text-sm text-destructive">{addError}</p>}
+              {!isAdmin && addError && addError !== 'login' && <p className="mt-2 text-sm text-destructive">{addError}</p>}
 
               <ShimmerButton type="button" onClick={goBackToProducts} className="mt-8 px-4 py-1.5">
                 <span className="whitespace-pre-wrap text-center text-xs font-medium leading-none tracking-tight">

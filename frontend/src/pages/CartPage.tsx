@@ -10,11 +10,13 @@ import { CardPaymentForm } from '../components/CardPaymentForm'
 import { Header } from '../components/Header'
 import { ProductImage } from '../components/ProductImage'
 import { AuthPrompt } from '../components/ui/AuthPrompt'
+import { ConfirmModal } from '../components/ui/ConfirmModal'
 import { Skeleton } from '../components/ui/Skeleton'
 import { Button } from '../components/ui/Button'
 import { OrderConfirmationCard } from '../components/ui/OrderConfirmationCard'
 import { getAccessToken } from '../lib/auth'
 import { useCart } from '../context/CartContext'
+import { useToast } from '../context/ToastContext'
 
 function formatPrice(price: number) {
   return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(price)
@@ -25,6 +27,7 @@ const inputClasses =
 
 export default function CartPage() {
   const { cart, isLoading, error, updateQuantity, removeItem, checkout, clearCart } = useCart()
+  const { showError } = useToast()
   const navigate = useNavigate()
   const [products, setProducts] = useState<Record<string, Product>>({})
   const [isEnriching, setIsEnriching] = useState(false)
@@ -32,6 +35,7 @@ export default function CartPage() {
   const [payment, setPayment] = useState<Payment | null>(null)
   const [checkoutError, setCheckoutError] = useState<string | null>(null)
   const [isCheckingOut, setIsCheckingOut] = useState(false)
+  const [removeItemTarget, setRemoveItemTarget] = useState<{ productId: string; name: string } | null>(null)
 
   const [step, setStep] = useState<'cart' | 'address'>('cart')
   const [addresses, setAddresses] = useState<Address[]>([])
@@ -122,10 +126,18 @@ export default function CartPage() {
         }),
       )
     } catch (err) {
-      setCheckoutError(err instanceof ApiError ? err.message : 'Sepet onaylanamadı.')
+      const message = err instanceof ApiError ? err.message : 'Sepet onaylanamadı.'
+      setCheckoutError(message)
+      showError('Sipariş oluşturulamadı', message)
     } finally {
       setIsCheckingOut(false)
     }
+  }
+
+  function handleConfirmRemoveItem() {
+    if (!removeItemTarget) return
+    removeItem(removeItemTarget.productId)
+    setRemoveItemTarget(null)
   }
 
   function handlePaymentSuccess(paymentResult: Payment) {
@@ -258,7 +270,7 @@ export default function CartPage() {
 
                       <button
                         type="button"
-                        onClick={() => removeItem(item.productId)}
+                        onClick={() => setRemoveItemTarget({ productId: item.productId, name: product?.name ?? 'Ürün' })}
                         className="text-muted-foreground hover:text-destructive"
                         aria-label="Kaldır"
                       >
@@ -404,6 +416,16 @@ export default function CartPage() {
           </div>
         )}
       </main>
+
+      <ConfirmModal
+        isOpen={removeItemTarget !== null}
+        title="Ürünü sepetten kaldır"
+        message={`"${removeItemTarget?.name}" ürününü sepetten kaldırmak istediğine emin misin?`}
+        confirmText="Kaldır"
+        isDestructive
+        onConfirm={handleConfirmRemoveItem}
+        onCancel={() => setRemoveItemTarget(null)}
+      />
     </div>
   )
 }

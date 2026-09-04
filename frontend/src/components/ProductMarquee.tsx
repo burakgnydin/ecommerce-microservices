@@ -59,7 +59,7 @@ export function ProductMarquee({ products }: ProductMarqueeProps) {
   return (
     <div className="mt-16 border-t border-border pt-10">
       <h2 className="mb-6 text-sm font-medium text-muted-foreground">Vitrinden</h2>
-      <div className="overflow-hidden pt-48">
+      <div className="overflow-x-clip overflow-y-visible pt-2">
         <motion.div
           className="flex w-max gap-4"
           animate={{ x: ['0%', '-50%'] }}

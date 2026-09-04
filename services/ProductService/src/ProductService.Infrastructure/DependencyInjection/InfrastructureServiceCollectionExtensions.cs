@@ -16,7 +16,7 @@ public static class InfrastructureServiceCollectionExtensions
     public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddDbContext<ProductDbContext>(options =>
-            options.UseNpgsql(configuration.GetConnectionString("ProductDb")));
+            options.UseNpgsql(NpgsqlConnectionStringHelper.Normalize(configuration.GetConnectionString("ProductDb"))));
 
         services.AddScoped<IProductRepository, ProductRepository>();
         services.AddScoped<ICategoryRepository, CategoryRepository>();

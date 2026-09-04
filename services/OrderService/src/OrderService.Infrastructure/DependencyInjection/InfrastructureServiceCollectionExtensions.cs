@@ -17,15 +17,15 @@ public static class InfrastructureServiceCollectionExtensions
     public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddDbContext<OrderDbContext>(options =>
-            options.UseNpgsql(configuration.GetConnectionString("OrderDb")));
+            options.UseNpgsql(NpgsqlConnectionStringHelper.Normalize(configuration.GetConnectionString("OrderDb"))));
 
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<ICartRepository, CartRepository>();
 
         services.AddHttpClient<IProductCatalogClient, ProductCatalogClient>(client =>
             {
-                client.BaseAddress = new Uri(configuration["Services:ProductService:BaseUrl"]
-                    ?? throw new InvalidOperationException("Services:ProductService:BaseUrl is not configured."));
+                client.BaseAddress = new Uri(EnsureHttpScheme(configuration["Services:ProductService:BaseUrl"]
+                    ?? throw new InvalidOperationException("Services:ProductService:BaseUrl is not configured.")));
             })
             .AddStandardResilienceHandler();
 
@@ -52,4 +52,9 @@ public static class InfrastructureServiceCollectionExtensions
 
         return services;
     }
+
+    // Render's private-network service references (fromService/hostport) resolve to "host:port"
+    // with no scheme; local/docker-compose config already includes "http://".
+    private static string EnsureHttpScheme(string baseUrl) =>
+        baseUrl.Contains("://") ? baseUrl : $"http://{baseUrl}";
 }
