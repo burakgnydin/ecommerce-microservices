@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { login, register } from '../api/auth'
 import { translateApiError } from '../api/client'
 import { useCart } from '../context/CartContext'
-import { storeTokens } from '../lib/auth'
+import { setAccessToken } from '../lib/auth'
 
 interface FieldBoxProps {
   id: string
@@ -65,7 +65,7 @@ export default function RegisterPage() {
     try {
       await register({ name, email, password })
       const tokens = await login({ email, password })
-      storeTokens(tokens)
+      setAccessToken(tokens.accessToken)
       await refresh()
       navigate('/')
     } catch (err) {

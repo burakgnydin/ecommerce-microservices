@@ -6,7 +6,7 @@ import { login } from '../api/auth'
 import { translateApiError } from '../api/client'
 import { AnimatedForm, Ripple, TechOrbitDisplay } from '../components/ui/AnimatedSignIn'
 import { useCart } from '../context/CartContext'
-import { storeTokens } from '../lib/auth'
+import { setAccessToken } from '../lib/auth'
 
 function OrbitIcon({ children, pulseDelay = 0 }: { children: React.ReactNode; pulseDelay?: number }) {
   return (
@@ -46,7 +46,7 @@ export default function LoginPage() {
     setIsSubmitting(true)
     try {
       const tokens = await login({ email, password })
-      storeTokens(tokens)
+      setAccessToken(tokens.accessToken)
       await refresh()
       navigate('/')
     } catch (err) {

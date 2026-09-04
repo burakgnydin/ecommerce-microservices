@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using AuthService.Application.DTOs;
 using AuthService.IntegrationTests.Fixtures;
+using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace AuthService.IntegrationTests.Api;
 
@@ -38,7 +39,7 @@ public class AuthApiTests : IAsyncLifetime
         await _factory.DisposeAsync();
     }
 
-    private async Task<LoginResponseDto> RegisterThenLoginAsync(string email, string password = "P@ssw0rd!")
+    private async Task<TokenResponseDto> RegisterThenLoginAsync(string email, string password = "P@ssw0rd!")
     {
         var registerDto = new RegisterRequestDto("Jane Doe", email, password);
         var registerResponse = await _client.PostAsJsonAsync("/api/auth/register", registerDto);
@@ -48,9 +49,23 @@ public class AuthApiTests : IAsyncLifetime
         var loginResponse = await _client.PostAsJsonAsync("/api/auth/login", loginDto);
         Assert.Equal(HttpStatusCode.OK, loginResponse.StatusCode);
 
-        var tokens = await loginResponse.Content.ReadFromJsonAsync<LoginResponseDto>();
+        var tokens = await loginResponse.Content.ReadFromJsonAsync<TokenResponseDto>();
         Assert.NotNull(tokens);
         return tokens!;
+    }
+
+    private static string GetRefreshTokenCookieValue(HttpResponseMessage response)
+    {
+        var setCookieHeader = response.Headers.GetValues("Set-Cookie").Single(h => h.StartsWith("refreshToken="));
+        var cookiePair = setCookieHeader.Split(';')[0];
+        return cookiePair["refreshToken=".Length..];
+    }
+
+    private static HttpRequestMessage CreateRequestWithRefreshCookie(string path, string refreshTokenCookieValue)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Post, path);
+        request.Headers.Add("Cookie", $"refreshToken={refreshTokenCookieValue}");
+        return request;
     }
 
     [Fact]
@@ -121,18 +136,20 @@ public class AuthApiTests : IAsyncLifetime
     public async Task Refresh_RotatesToken_AndOldRefreshTokenBecomesInvalid()
     {
         var email = $"jane-{Guid.NewGuid()}@example.com";
-        var tokens = await RegisterThenLoginAsync(email);
+        var registerResponse = await _client.PostAsJsonAsync("/api/auth/register", new RegisterRequestDto("Jane Doe", email, "P@ssw0rd!"));
+        Assert.Equal(HttpStatusCode.Created, registerResponse.StatusCode);
+        var loginResponse = await _client.PostAsJsonAsync("/api/auth/login", new LoginRequestDto(email, "P@ssw0rd!"));
+        var originalRefreshToken = GetRefreshTokenCookieValue(loginResponse);
 
-        var refreshResponse = await _client.PostAsJsonAsync(
-            "/api/auth/refresh", new RefreshRequestDto(tokens.RefreshToken));
+        // Use a client without cookie auto-handling so each request only carries the explicit cookie under test.
+        using var manualClient = _factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = false });
+
+        var refreshResponse = await manualClient.SendAsync(CreateRequestWithRefreshCookie("/api/auth/refresh", originalRefreshToken));
         Assert.Equal(HttpStatusCode.OK, refreshResponse.StatusCode);
+        var rotatedRefreshToken = GetRefreshTokenCookieValue(refreshResponse);
+        Assert.NotEqual(originalRefreshToken, rotatedRefreshToken);
 
-        var rotated = await refreshResponse.Content.ReadFromJsonAsync<LoginResponseDto>();
-        Assert.NotNull(rotated);
-        Assert.NotEqual(tokens.RefreshToken, rotated!.RefreshToken);
-
-        var reuseResponse = await _client.PostAsJsonAsync(
-            "/api/auth/refresh", new RefreshRequestDto(tokens.RefreshToken));
+        var reuseResponse = await manualClient.SendAsync(CreateRequestWithRefreshCookie("/api/auth/refresh", originalRefreshToken));
         Assert.Equal(HttpStatusCode.Unauthorized, reuseResponse.StatusCode);
     }
 
@@ -140,14 +157,12 @@ public class AuthApiTests : IAsyncLifetime
     public async Task Logout_RevokesToken_SoSubsequentRefreshFails()
     {
         var email = $"jane-{Guid.NewGuid()}@example.com";
-        var tokens = await RegisterThenLoginAsync(email);
+        await RegisterThenLoginAsync(email);
 
-        var logoutResponse = await _client.PostAsJsonAsync(
-            "/api/auth/logout", new LogoutRequestDto(tokens.RefreshToken));
+        var logoutResponse = await _client.PostAsync("/api/auth/logout", null);
         Assert.Equal(HttpStatusCode.NoContent, logoutResponse.StatusCode);
 
-        var refreshResponse = await _client.PostAsJsonAsync(
-            "/api/auth/refresh", new RefreshRequestDto(tokens.RefreshToken));
+        var refreshResponse = await _client.PostAsync("/api/auth/refresh", null);
         Assert.Equal(HttpStatusCode.Unauthorized, refreshResponse.StatusCode);
     }
 
@@ -155,14 +170,12 @@ public class AuthApiTests : IAsyncLifetime
     public async Task Logout_IsIdempotent_WhenCalledTwice()
     {
         var email = $"jane-{Guid.NewGuid()}@example.com";
-        var tokens = await RegisterThenLoginAsync(email);
+        await RegisterThenLoginAsync(email);
 
-        var firstLogout = await _client.PostAsJsonAsync(
-            "/api/auth/logout", new LogoutRequestDto(tokens.RefreshToken));
+        var firstLogout = await _client.PostAsync("/api/auth/logout", null);
         Assert.Equal(HttpStatusCode.NoContent, firstLogout.StatusCode);
 
-        var secondLogout = await _client.PostAsJsonAsync(
-            "/api/auth/logout", new LogoutRequestDto(tokens.RefreshToken));
+        var secondLogout = await _client.PostAsync("/api/auth/logout", null);
         Assert.Equal(HttpStatusCode.NoContent, secondLogout.StatusCode);
     }
 }

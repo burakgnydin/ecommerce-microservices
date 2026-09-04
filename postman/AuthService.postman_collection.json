@@ -2,14 +2,13 @@
   "info": {
     "_postman_id": "6f2c9d4e-8b1a-4a7f-9e3d-2c7a5b9d1e6f",
     "name": "AuthService",
-    "description": "Auth-service API (Register/Login/Refresh/Logout + /users/me). Select the 'AuthService Local' environment before running so {{baseUrl}} resolves. Run the requests top-to-bottom (or via Collection Runner) to exercise Register -> Login -> Get Current User -> Refresh -> Logout, with tokens passed automatically between requests via collection variables.",
+    "description": "Auth-service API (Register/Login/Refresh/Logout + /users/me). Select the 'AuthService Local' environment before running so {{baseUrl}} resolves. Run the requests top-to-bottom (or via Collection Runner) to exercise Register -> Login -> Get Current User -> Refresh -> Logout. The access token is passed between requests via a collection variable; the refresh token is an HttpOnly cookie handled automatically by Postman's cookie jar - enable 'Automatically follow redirects' and make sure the Postman cookie jar isn't cleared between requests.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
     { "key": "userEmail", "value": "", "type": "string" },
     { "key": "userPassword", "value": "SecureP@ss1", "type": "string" },
-    { "key": "accessToken", "value": "", "type": "string" },
-    { "key": "refreshToken", "value": "", "type": "string" }
+    { "key": "accessToken", "value": "", "type": "string" }
   ],
   "item": [
     {
@@ -78,13 +77,15 @@
               "",
               "const jsonData = pm.response.json();",
               "",
-              "pm.test(\"Response has an accessToken and refreshToken\", function () {",
+              "pm.test(\"Response has an accessToken\", function () {",
               "    pm.expect(jsonData.accessToken).to.be.a(\"string\");",
-              "    pm.expect(jsonData.refreshToken).to.be.a(\"string\");",
               "});",
               "",
-              "pm.collectionVariables.set(\"accessToken\", jsonData.accessToken);",
-              "pm.collectionVariables.set(\"refreshToken\", jsonData.refreshToken);"
+              "pm.test(\"Refresh token cookie is set\", function () {",
+              "    pm.expect(pm.cookies.has(\"refreshToken\")).to.be.true;",
+              "});",
+              "",
+              "pm.collectionVariables.set(\"accessToken\", jsonData.accessToken);"
             ]
           }
         }
@@ -103,7 +104,7 @@
           "host": [ "{{baseUrl}}" ],
           "path": [ "api", "auth", "login" ]
         },
-        "description": "Logs in with the user created by 'Register' and stores the returned access/refresh tokens in collection variables. Run 'Register' first."
+        "description": "Logs in with the user created by 'Register', stores the returned access token in a collection variable, and receives the refresh token as an HttpOnly cookie (handled automatically by Postman's cookie jar). Run 'Register' first."
       },
       "response": []
     },
@@ -215,33 +216,29 @@
               "",
               "const jsonData = pm.response.json();",
               "",
-              "pm.test(\"Response has a rotated accessToken and refreshToken\", function () {",
+              "pm.test(\"Response has a rotated accessToken\", function () {",
               "    pm.expect(jsonData.accessToken).to.be.a(\"string\");",
-              "    pm.expect(jsonData.refreshToken).to.be.a(\"string\");",
-              "    pm.expect(jsonData.refreshToken).to.not.eql(pm.collectionVariables.get(\"refreshToken\"));",
+              "    pm.expect(jsonData.accessToken).to.not.eql(pm.collectionVariables.get(\"accessToken\"));",
               "});",
               "",
-              "pm.collectionVariables.set(\"accessToken\", jsonData.accessToken);",
-              "pm.collectionVariables.set(\"refreshToken\", jsonData.refreshToken);"
+              "pm.test(\"Refresh token cookie is rotated\", function () {",
+              "    pm.expect(pm.cookies.has(\"refreshToken\")).to.be.true;",
+              "});",
+              "",
+              "pm.collectionVariables.set(\"accessToken\", jsonData.accessToken);"
             ]
           }
         }
       ],
       "request": {
         "method": "POST",
-        "header": [
-          { "key": "Content-Type", "value": "application/json" }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
-        },
+        "header": [],
         "url": {
           "raw": "{{baseUrl}}/api/auth/refresh",
           "host": [ "{{baseUrl}}" ],
           "path": [ "api", "auth", "refresh" ]
         },
-        "description": "Rotates the refresh token stored by 'Login (Correct Password)', issuing a new access/refresh token pair. Run 'Login (Correct Password)' first."
+        "description": "Rotates the refresh token cookie set by 'Login (Correct Password)', issuing a new access/refresh token pair. Run 'Login (Correct Password)' first."
       },
       "response": []
     },
@@ -262,19 +259,13 @@
       ],
       "request": {
         "method": "POST",
-        "header": [
-          { "key": "Content-Type", "value": "application/json" }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
-        },
+        "header": [],
         "url": {
           "raw": "{{baseUrl}}/api/auth/logout",
           "host": [ "{{baseUrl}}" ],
           "path": [ "api", "auth", "logout" ]
         },
-        "description": "Revokes the refresh token rotated by 'Refresh Token'. Run 'Refresh Token' first."
+        "description": "Revokes the refresh token cookie rotated by 'Refresh Token'. Run 'Refresh Token' first."
       },
       "response": []
     }

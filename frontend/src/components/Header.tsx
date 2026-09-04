@@ -8,7 +8,7 @@ import { getProductById } from '../api/products'
 import type { Category, Product, UserResponse } from '../api/types'
 import { getMe } from '../api/users'
 import { useCart } from '../context/CartContext'
-import { clearTokens, getAccessToken, getRefreshToken } from '../lib/auth'
+import { getAccessToken, setAccessToken } from '../lib/auth'
 import { Button } from './ui/Button'
 import { ConfirmModal } from './ui/ConfirmModal'
 import { ProductImage } from './ProductImage'
@@ -104,13 +104,12 @@ function AuthMenu({ user, isLoggedIn }: { user: UserResponse | null; isLoggedIn:
     const buttonText = isAdmin ? 'Panel' : 'Hesabım'
 
     async function handleLogout() {
-      const refreshToken = getRefreshToken()
       try {
-        if (refreshToken) await logout(refreshToken)
+        await logout()
       } catch {
         // ignore - clear local session regardless
       }
-      clearTokens()
+      setAccessToken(null)
       clearCart()
       setShowLogoutConfirm(false)
       setIsOpen(false)

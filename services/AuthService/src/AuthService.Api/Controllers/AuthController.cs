@@ -13,11 +13,17 @@ namespace AuthService.Api.Controllers;
 [Tags("Auth")]
 public class AuthController : ControllerBase
 {
-    private readonly IAuthService _authService;
+    private const string RefreshTokenCookieName = "refreshToken";
 
-    public AuthController(IAuthService authService)
+    private readonly IAuthService _authService;
+    private readonly ITokenService _tokenService;
+    private readonly IHostEnvironment _environment;
+
+    public AuthController(IAuthService authService, ITokenService tokenService, IHostEnvironment environment)
     {
         _authService = authService;
+        _tokenService = tokenService;
+        _environment = environment;
     }
 
     /// <summary>
@@ -38,48 +44,68 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
-    /// Authenticates a user and issues an access/refresh token pair.
+    /// Authenticates a user and issues an access token, setting the refresh token as an HttpOnly cookie.
     /// </summary>
     /// <param name="dto">Login credentials.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     [HttpPost("login")]
     [EnableRateLimiting("login")]
-    [ProducesResponseType<LoginResponseDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType<TokenResponseDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
-    public async Task<ActionResult<LoginResponseDto>> Login(LoginRequestDto dto, CancellationToken cancellationToken)
+    public async Task<ActionResult<TokenResponseDto>> Login(LoginRequestDto dto, CancellationToken cancellationToken)
     {
         var result = await _authService.LoginAsync(dto, cancellationToken);
-        return Ok(result);
+        SetRefreshTokenCookie(result.RefreshToken);
+        return Ok(new TokenResponseDto(result.AccessToken, result.ExpiresInSeconds));
     }
 
     /// <summary>
-    /// Rotates a refresh token, issuing a new access/refresh token pair.
+    /// Rotates the refresh token cookie, issuing a new access token.
     /// </summary>
-    /// <param name="dto">The refresh token to rotate.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     [HttpPost("refresh")]
-    [ProducesResponseType<LoginResponseDto>(StatusCodes.Status200OK)]
-    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<TokenResponseDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized)]
-    public async Task<ActionResult<LoginResponseDto>> Refresh(RefreshRequestDto dto, CancellationToken cancellationToken)
+    public async Task<ActionResult<TokenResponseDto>> Refresh(CancellationToken cancellationToken)
     {
-        var result = await _authService.RefreshAsync(dto, cancellationToken);
-        return Ok(result);
+        if (!Request.Cookies.TryGetValue(RefreshTokenCookieName, out var refreshToken) || string.IsNullOrEmpty(refreshToken))
+        {
+            return Unauthorized();
+        }
+
+        var result = await _authService.RefreshAsync(new RefreshRequestDto(refreshToken), cancellationToken);
+        SetRefreshTokenCookie(result.RefreshToken);
+        return Ok(new TokenResponseDto(result.AccessToken, result.ExpiresInSeconds));
     }
 
     /// <summary>
-    /// Revokes a refresh token.
+    /// Revokes the refresh token and clears its cookie.
     /// </summary>
-    /// <param name="dto">The refresh token to revoke.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     [HttpPost("logout")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> Logout(LogoutRequestDto dto, CancellationToken cancellationToken)
+    public async Task<IActionResult> Logout(CancellationToken cancellationToken)
     {
-        await _authService.LogoutAsync(dto, cancellationToken);
+        if (Request.Cookies.TryGetValue(RefreshTokenCookieName, out var refreshToken) && !string.IsNullOrEmpty(refreshToken))
+        {
+            await _authService.LogoutAsync(new LogoutRequestDto(refreshToken), cancellationToken);
+        }
+
+        Response.Cookies.Delete(RefreshTokenCookieName, new CookieOptions { Path = "/" });
         return NoContent();
+    }
+
+    private void SetRefreshTokenCookie(string refreshToken)
+    {
+        Response.Cookies.Append(RefreshTokenCookieName, refreshToken, new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = !_environment.IsDevelopment(),
+            SameSite = _environment.IsDevelopment() ? SameSiteMode.Lax : SameSiteMode.None,
+            Path = "/",
+            Expires = DateTimeOffset.UtcNow.Add(_tokenService.RefreshTokenLifetime),
+        });
     }
 }
