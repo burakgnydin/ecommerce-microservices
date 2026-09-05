@@ -1,4 +1,4 @@
-import { type FormEvent, useEffect, useMemo, useState } from 'react'
+import { type FormEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Pencil, Plus, Trash2 } from 'lucide-react'
 import { createCategory, deleteCategory, getCategories, updateCategory } from '../api/categories'
@@ -15,6 +15,7 @@ import { AdminOverviewSlider } from '../components/ui/AdminOverviewSlider'
 import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
 import { ConfirmModal } from '../components/ui/ConfirmModal'
+import { SearchBar } from '../components/ui/SearchBar'
 import { Skeleton } from '../components/ui/Skeleton'
 import { getAccessToken } from '../lib/auth'
 import { smoothScrollToId } from '../lib/utils'
@@ -94,6 +95,12 @@ export default function AdminPage() {
   const [overviewError, setOverviewError] = useState<string | null>(null)
   const [orderStatusFilter, setOrderStatusFilter] = useState<OrderStatusFilter>('All')
 
+  const [categorySearch, setCategorySearch] = useState('')
+  const [productSearch, setProductSearch] = useState('')
+  const [orderSearch, setOrderSearch] = useState('')
+  const [paymentSearch, setPaymentSearch] = useState('')
+  const isFirstProductSearch = useRef(true)
+
   useEffect(() => {
     if (!getAccessToken()) {
       navigate('/login')
@@ -143,23 +150,57 @@ export default function AdminPage() {
       .finally(() => setIsLoadingOverview(false))
   }, [isAuthorized])
 
-  const usersById = useMemo(() => new Map(adminUsers.map((u) => [u.id, u])), [adminUsers])
-
-  const latestPaymentByOrderId = useMemo(() => {
-    const map = new Map<string, Payment>()
-    for (const payment of payments) {
-      const existing = map.get(payment.orderId)
-      if (!existing || new Date(payment.createdAt) > new Date(existing.createdAt)) {
-        map.set(payment.orderId, payment)
-      }
+  useEffect(() => {
+    if (isFirstProductSearch.current) {
+      isFirstProductSearch.current = false
+      return
     }
-    return map
-  }, [payments])
+    if (!isAuthorized) return
+    const timer = setTimeout(() => {
+      getProducts(1, 100, undefined, productSearch || undefined)
+        .then((result) => setProducts(result.items))
+        .catch(() => {})
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [productSearch, isAuthorized])
 
-  const filteredOrders = useMemo(
-    () => (orderStatusFilter === 'All' ? orders : orders.filter((o) => o.status === orderStatusFilter)),
-    [orders, orderStatusFilter],
+  const usersById = useMemo(() => new Map(adminUsers.map((u) => [u.id, u])), [adminUsers])
+  const ordersById = useMemo(() => new Map(orders.map((o) => [o.id, o])), [orders])
+
+  const filteredCategories = useMemo(
+    () =>
+      categories.filter((category) => category.name.toLocaleLowerCase('tr').includes(categorySearch.toLocaleLowerCase('tr'))),
+    [categories, categorySearch],
   )
+
+  const filteredOrders = useMemo(() => {
+    const byStatus = orderStatusFilter === 'All' ? orders : orders.filter((o) => o.status === orderStatusFilter)
+    const query = orderSearch.toLocaleLowerCase('tr').trim()
+    if (!query) return byStatus
+    return byStatus.filter((order) => {
+      const customer = usersById.get(order.userId)
+      return (
+        order.id.toLocaleLowerCase('tr').includes(query) ||
+        customer?.name.toLocaleLowerCase('tr').includes(query) ||
+        customer?.email.toLocaleLowerCase('tr').includes(query)
+      )
+    })
+  }, [orders, orderStatusFilter, orderSearch, usersById])
+
+  const filteredPayments = useMemo(() => {
+    const query = paymentSearch.toLocaleLowerCase('tr').trim()
+    if (!query) return payments
+    return payments.filter((payment) => {
+      const order = ordersById.get(payment.orderId)
+      const customer = order ? usersById.get(order.userId) : undefined
+      return (
+        payment.orderId.toLocaleLowerCase('tr').includes(query) ||
+        payment.maskedCardNumber.toLocaleLowerCase('tr').includes(query) ||
+        customer?.name.toLocaleLowerCase('tr').includes(query) ||
+        customer?.email.toLocaleLowerCase('tr').includes(query)
+      )
+    })
+  }, [payments, paymentSearch, ordersById, usersById])
 
   async function handleAddCategory(event: FormEvent) {
     event.preventDefault()
@@ -283,10 +324,18 @@ export default function AdminPage() {
         {!loadError && !isLoadingData && (
           <div className="mt-8 grid gap-6">
             <Card id="admin-section-categories" className="p-6">
-              <h2 className="text-lg font-semibold text-foreground">Kategoriler</h2>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <h2 className="text-lg font-semibold text-foreground">Kategoriler</h2>
+                <SearchBar
+                  value={categorySearch}
+                  onChange={setCategorySearch}
+                  placeholder="Kategori ara..."
+                  className="sm:w-72"
+                />
+              </div>
 
               <ul className="mt-4 divide-y divide-border">
-                {categories.map((category) => (
+                {filteredCategories.map((category) => (
                   <li key={category.id} className="flex items-center gap-3 py-3">
                     {editingCategoryId === category.id ? (
                       <form onSubmit={handleSaveCategory} className="flex flex-1 items-center gap-3">
@@ -347,20 +396,28 @@ export default function AdminPage() {
             </Card>
 
             <Card id="admin-section-products" className="p-6">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <h2 className="text-lg font-semibold text-foreground">Ürünler</h2>
-                {productFormMode === null && (
-                  <Button
-                    size="sm"
-                    onClick={() => {
-                      setProductError(null)
-                      setEditingProduct(null)
-                      setProductFormMode('create')
-                    }}
-                  >
-                    <Plus className="h-4 w-4" /> Yeni Ürün Ekle
-                  </Button>
-                )}
+                <div className="flex flex-wrap items-center gap-3">
+                  <SearchBar
+                    value={productSearch}
+                    onChange={setProductSearch}
+                    placeholder="Ürün ara..."
+                    className="sm:w-72"
+                  />
+                  {productFormMode === null && (
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        setProductError(null)
+                        setEditingProduct(null)
+                        setProductFormMode('create')
+                      }}
+                    >
+                      <Plus className="h-4 w-4" /> Yeni Ürün Ekle
+                    </Button>
+                  )}
+                </div>
               </div>
 
               {productFormMode !== null && (
@@ -419,23 +476,30 @@ export default function AdminPage() {
 
             <Card id="admin-section-orders" className="p-6">
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <h2 className="text-lg font-semibold text-foreground">Sipariş ve Ödeme Genel Bakışı</h2>
-                <div className="flex flex-wrap gap-2">
-                  {ORDER_STATUS_FILTERS.map((filter) => (
-                    <button
-                      key={filter.id}
-                      type="button"
-                      onClick={() => setOrderStatusFilter(filter.id)}
-                      className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                        orderStatusFilter === filter.id
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
-                      }`}
-                    >
-                      {filter.label}
-                    </button>
-                  ))}
-                </div>
+                <h2 className="text-lg font-semibold text-foreground">Siparişler</h2>
+                <SearchBar
+                  value={orderSearch}
+                  onChange={setOrderSearch}
+                  placeholder="Sipariş, müşteri ara..."
+                  className="sm:w-72"
+                />
+              </div>
+
+              <div className="mt-4 flex flex-wrap gap-2">
+                {ORDER_STATUS_FILTERS.map((filter) => (
+                  <button
+                    key={filter.id}
+                    type="button"
+                    onClick={() => setOrderStatusFilter(filter.id)}
+                    className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                      orderStatusFilter === filter.id
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                    }`}
+                  >
+                    {filter.label}
+                  </button>
+                ))}
               </div>
 
               {overviewError && <p className="mt-4 text-sm text-destructive">{overviewError}</p>}
@@ -454,13 +518,12 @@ export default function AdminPage() {
 
               {!overviewError && !isLoadingOverview && filteredOrders.length > 0 && (
                 <div className="mt-4 overflow-x-auto">
-                  <table className="w-full min-w-[720px] text-left text-sm">
+                  <table className="w-full min-w-[640px] text-left text-sm">
                     <thead>
                       <tr className="border-b border-border text-xs text-muted-foreground">
                         <th className="pb-2 pr-4 font-medium">Sipariş</th>
                         <th className="pb-2 pr-4 font-medium">Müşteri</th>
                         <th className="pb-2 pr-4 font-medium">Durum</th>
-                        <th className="pb-2 pr-4 font-medium">Ödeme</th>
                         <th className="pb-2 pr-4 font-medium">Tutar</th>
                         <th className="pb-2 font-medium">Tarih</th>
                       </tr>
@@ -468,9 +531,7 @@ export default function AdminPage() {
                     <tbody className="divide-y divide-border">
                       {filteredOrders.map((order) => {
                         const customer = usersById.get(order.userId)
-                        const payment = latestPaymentByOrderId.get(order.id)
                         const status = orderStatusBadge(order.status)
-                        const paymentStatus = paymentStatusBadge(payment?.status)
                         return (
                           <tr key={order.id}>
                             <td className="py-3 pr-4 font-mono text-xs text-muted-foreground">{order.id.slice(0, 8)}</td>
@@ -483,14 +544,77 @@ export default function AdminPage() {
                                 {status.label}
                               </span>
                             </td>
+                            <td className="py-3 pr-4 font-medium text-foreground">{formatPrice(order.totalAmount)}</td>
+                            <td className="py-3 text-xs text-muted-foreground">{formatDate(order.createdAt)}</td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </Card>
+
+            <Card id="admin-section-payments" className="p-6">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <h2 className="text-lg font-semibold text-foreground">Ödemeler</h2>
+                <SearchBar
+                  value={paymentSearch}
+                  onChange={setPaymentSearch}
+                  placeholder="Ödeme, müşteri ara..."
+                  className="sm:w-72"
+                />
+              </div>
+
+              {overviewError && <p className="mt-4 text-sm text-destructive">{overviewError}</p>}
+
+              {!overviewError && isLoadingOverview && (
+                <div className="mt-4 space-y-2">
+                  <Skeleton className="h-10 w-full rounded-md" />
+                  <Skeleton className="h-10 w-full rounded-md" />
+                  <Skeleton className="h-10 w-full rounded-md" />
+                </div>
+              )}
+
+              {!overviewError && !isLoadingOverview && filteredPayments.length === 0 && (
+                <p className="mt-4 text-sm text-muted-foreground">Bu aramayla eşleşen ödeme yok.</p>
+              )}
+
+              {!overviewError && !isLoadingOverview && filteredPayments.length > 0 && (
+                <div className="mt-4 overflow-x-auto">
+                  <table className="w-full min-w-[640px] text-left text-sm">
+                    <thead>
+                      <tr className="border-b border-border text-xs text-muted-foreground">
+                        <th className="pb-2 pr-4 font-medium">Sipariş</th>
+                        <th className="pb-2 pr-4 font-medium">Müşteri</th>
+                        <th className="pb-2 pr-4 font-medium">Durum</th>
+                        <th className="pb-2 pr-4 font-medium">Kart</th>
+                        <th className="pb-2 pr-4 font-medium">Tutar</th>
+                        <th className="pb-2 font-medium">Tarih</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {filteredPayments.map((payment) => {
+                        const order = ordersById.get(payment.orderId)
+                        const customer = order ? usersById.get(order.userId) : undefined
+                        const paymentStatus = paymentStatusBadge(payment.status)
+                        return (
+                          <tr key={payment.id}>
+                            <td className="py-3 pr-4 font-mono text-xs text-muted-foreground">
+                              {payment.orderId.slice(0, 8)}
+                            </td>
+                            <td className="py-3 pr-4">
+                              <p className="font-medium text-foreground">{customer?.name ?? 'Bilinmiyor'}</p>
+                              <p className="text-xs text-muted-foreground">{customer?.email ?? order?.userId}</p>
+                            </td>
                             <td className="py-3 pr-4">
                               <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${paymentStatus.className}`}>
                                 {paymentStatus.label}
                               </span>
-                              {payment && <p className="mt-1 text-xs text-muted-foreground">{payment.maskedCardNumber}</p>}
                             </td>
-                            <td className="py-3 pr-4 font-medium text-foreground">{formatPrice(order.totalAmount)}</td>
-                            <td className="py-3 text-xs text-muted-foreground">{formatDate(order.createdAt)}</td>
+                            <td className="py-3 pr-4 text-xs text-muted-foreground">{payment.maskedCardNumber}</td>
+                            <td className="py-3 pr-4 font-medium text-foreground">{formatPrice(payment.amount)}</td>
+                            <td className="py-3 text-xs text-muted-foreground">{formatDate(payment.createdAt)}</td>
                           </tr>
                         )
                       })}

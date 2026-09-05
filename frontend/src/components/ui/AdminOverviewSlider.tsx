@@ -6,7 +6,7 @@ const overviewSlides = [
   { id: 1, title: 'Ürünler', description: 'Ürün kataloğunu ekle, düzenle ve yönet.', icon: Package, sectionId: 'admin-section-products' },
   { id: 2, title: 'Kategoriler', description: 'Ürünleri kategorilere ayırarak düzenle.', icon: Tags, sectionId: 'admin-section-categories' },
   { id: 3, title: 'Siparişler', description: 'Gelen siparişleri takip et ve yönet.', icon: ListOrdered, sectionId: 'admin-section-orders' },
-  { id: 4, title: 'Ödemeler', description: 'Ödeme durumlarına genel bakış.', icon: CreditCard, sectionId: 'admin-section-orders' },
+  { id: 4, title: 'Ödemeler', description: 'Ödeme durumlarına genel bakış.', icon: CreditCard, sectionId: 'admin-section-payments' },
 ]
 
 export function AdminOverviewSlider() {

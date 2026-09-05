@@ -78,7 +78,7 @@ export default function RegisterPage() {
   return (
     <section className="min-h-screen bg-background p-3 text-foreground antialiased">
       <div className="grid min-h-[calc(100vh-1.5rem)] gap-6 lg:grid-cols-[1.06fr_0.94fr]">
-        <div className="relative flex min-h-[720px] overflow-hidden rounded-md bg-primary p-8 text-primary-foreground sm:p-12 lg:min-h-0">
+        <div className="relative hidden overflow-hidden rounded-md bg-primary p-8 text-primary-foreground sm:p-12 lg:flex lg:min-h-0">
           <GrainGradient
             speed={1}
             scale={1}
@@ -103,7 +103,7 @@ export default function RegisterPage() {
           </div>
         </div>
 
-        <div className="flex min-h-[760px] items-start rounded-md border border-border bg-card px-6 py-12 sm:px-10 lg:min-h-0 lg:px-14 lg:py-28 xl:px-20">
+        <div className="flex items-start rounded-md border border-border bg-card px-6 py-12 sm:px-10 lg:px-14 lg:py-28 xl:px-20">
           <div className="mx-auto w-full max-w-[590px]">
             <div>
               <Link to="/" className="text-sm font-medium text-muted-foreground hover:text-foreground">

@@ -37,8 +37,22 @@ export default function CategoriesPage() {
   useEffect(() => {
     let cancelled = false
     getCategories()
-      .then((data) => {
-        if (!cancelled) setCategories(data)
+      .then((categoryList) => {
+        if (cancelled) return
+        setCategories(categoryList)
+        return Promise.all(
+          categoryList.map((category) =>
+            getProducts(1, 1, category.id).then((data) => [category.id, data] as const),
+          ),
+        )
+      })
+      .then((entries) => {
+        if (cancelled || !entries) return
+        const byCategory: Record<string, CategoryPreview> = {}
+        for (const [categoryId, data] of entries) {
+          byCategory[categoryId] = { imageUrl: data.items[0]?.imageUrl ?? null, count: data.totalCount }
+        }
+        setPreviews(byCategory)
       })
       .catch((err) => {
         if (!cancelled) {
@@ -48,23 +62,6 @@ export default function CategoriesPage() {
       .finally(() => {
         if (!cancelled) setIsLoading(false)
       })
-
-    getProducts(1, 100)
-      .then((data) => {
-        if (cancelled) return
-        const byCategory: Record<string, CategoryPreview> = {}
-        for (const product of data.items) {
-          const existing = byCategory[product.categoryId]
-          if (existing) {
-            existing.count += 1
-            if (!existing.imageUrl && product.imageUrl) existing.imageUrl = product.imageUrl
-          } else {
-            byCategory[product.categoryId] = { imageUrl: product.imageUrl, count: 1 }
-          }
-        }
-        setPreviews(byCategory)
-      })
-      .catch(() => {})
 
     return () => {
       cancelled = true

@@ -85,7 +85,7 @@ export default function HomePage() {
             </motion.div>
           </div>
 
-          <InteractiveImageAccordion products={products} />
+          <InteractiveImageAccordion />
         </div>
       </section>
 
