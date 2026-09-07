@@ -68,7 +68,7 @@ export function FavoriteProducts({ products }: FavoriteProductsProps) {
           </div>
         </div>
 
-        <div className="relative min-h-[360px]">
+        <div className="relative min-h-[440px] sm:min-h-[360px]">
           {favorites.map((product, index) => (
             <motion.div
               key={product.id}

@@ -7,6 +7,7 @@ import { getProducts } from '../api/products'
 import type { Category } from '../api/types'
 import { Header } from '../components/Header'
 import { ArticleCard } from '../components/ui/ArticleCard'
+import { ArticleCardSkeleton } from '../components/ui/ArticleCardSkeleton'
 import { SearchBar } from '../components/ui/SearchBar'
 
 const fadeUp = {
@@ -77,7 +78,13 @@ export default function CategoriesPage() {
           <SearchBar value={search} onChange={setSearch} placeholder="Kategori ara..." className="sm:w-72" />
         </div>
 
-        {isLoading && <p className="mt-8 text-muted-foreground">Yükleniyor...</p>}
+        {isLoading && (
+          <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <ArticleCardSkeleton key={i} />
+            ))}
+          </div>
+        )}
         {error && <p className="mt-8 text-destructive">{error}</p>}
         {!isLoading && !error && categories.length === 0 && (
           <p className="mt-8 text-muted-foreground">Henüz kategori eklenmemiş.</p>

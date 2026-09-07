@@ -20,7 +20,7 @@ export function ProductImage({ product, className = '', iconClassName }: Product
       src={product.imageUrl}
       alt={product.name}
       loading="lazy"
-      className={`object-cover ${className}`}
+      className={`bg-muted object-cover ${className}`}
       onError={() => setFailed(true)}
     />
   )
