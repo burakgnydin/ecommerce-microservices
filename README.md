@@ -123,11 +123,6 @@ npm run lint
 
 Her serviste, her push'ta otomatik derleme ve test çalıştıran bir GitHub Actions iş akışı bulunur.
 
-## Deployment
-
-Backend ve frontend, Render'ın ücretsiz katmanı kullanılarak demo amaçlı canlıya alınmıştır.
-
-- **Canlı adres:** _[Render deploy linkini buraya ekleyin]_
 
 ## Proje Yapısı
 
